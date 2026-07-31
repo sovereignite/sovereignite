@@ -1,7 +1,31 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: sovereignite-root
+  namespace: sovereignite-system
+data:
+  ca.crt: ""
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: kubernetes-ca
+  namespace: sovereignite-system
+data:
+  ca.crt: ""
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubernetes-front-proxy-ca
+  namespace: sovereignite-system
+data:
+  ca.crt: ""
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etcd-ca
   namespace: sovereignite-system
 data:
   ca.crt: ""

@@ -29,7 +29,7 @@ data:
         plugin_data {
           socket_path = "/run/spire-tpm-keymanager/keymanager.sock"
           module_path = "/usr/lib64/pkcs11/libtpm2_pkcs11.so"
-          token_label = "sovereignite-spire-ca"
+          token_label = "sovereignite-ca"
           key_label_prefix = "sovereignite-spire-"
         }
       }

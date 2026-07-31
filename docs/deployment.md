@@ -115,8 +115,15 @@ scripts/assert-no-ca-private-keys.sh
 scripts/stage-kubeadm-pki-to-nodes.sh
 scripts/stage-pki-to-nodes.sh
 scripts/bootstrap-kubeadm.sh
-scripts/update-ca-configmaps.sh
 ```
+
+`scripts/generate-kubeadm-external-pki.sh` also writes
+`build/pki/secrets/tpm2-pkcs11-pin.env` from the CA node's TPM PKCS#11 token
+state. `scripts/bootstrap-kubeadm.sh` applies the local overlay and then calls
+`scripts/update-ca-configmaps.sh`, which uses that file to create the
+`tpm2-pkcs11-pin` Secrets in `sovereignite-system` and `spire`, and to load the
+root plus subordinate public CA ConfigMaps consumed by the TPM-backed issuers.
+The Secret contains token PINs only; CA private keys remain TPM-resident.
 
 ## 7. Verify
 

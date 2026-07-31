@@ -19,6 +19,8 @@ Purpose:
   signing.
 - Validates requested usages, DNS names, SPIFFE URIs, duration, and approval
   condition.
+- Allows CA certificate requests only when the referenced issuer profile is a CA
+  profile and issuer policy permits CA requests.
 - Signs with a TPM-resident CA key through PKCS#11.
 - Writes issued certificates back to the `CertificateRequest` status.
 

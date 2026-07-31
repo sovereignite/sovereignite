@@ -123,6 +123,12 @@ if [ ! -f "${pin_file}" ]; then
 fi
 # shellcheck disable=SC1090
 . "${pin_file}"
+mkdir -p "${output_dir}/secrets"
+umask 077
+{
+  printf 'TPM2_PKCS11_SO_PIN=%s\n' "${TPM2_PKCS11_SO_PIN}"
+  printf 'TPM2_PKCS11_USER_PIN=%s\n' "${TPM2_PKCS11_USER_PIN}"
+} > "${output_dir}/secrets/tpm2-pkcs11-pin.env"
 
 export TPM2_PKCS11_STORE="${STORE_DIR}"
 export PKCS11_PROVIDER_MODULE="${PKCS11_MODULE}"
@@ -354,7 +360,7 @@ REMOTE_SCRIPT
 
 tmp_output_tar="${OUT_ROOT}/kubeadm-pki-output.tar"
 "${ssh_cmd[@]}" "${SSH_USER}@${ca_node_ip}" "sudo tar -C '${REMOTE_ROOT}/output' -cf - ." > "${tmp_output_tar}"
-rm -rf "${OUT_ROOT}/nodes" "${OUT_ROOT}/kubernetes" "${OUT_ROOT}/cert-manager" "${OUT_ROOT}/spire" "${OUT_ROOT}/profiles" "${OUT_ROOT}/shared" "${OUT_ROOT}/root-ca.crt"
+rm -rf "${OUT_ROOT}/nodes" "${OUT_ROOT}/kubernetes" "${OUT_ROOT}/cert-manager" "${OUT_ROOT}/spire" "${OUT_ROOT}/profiles" "${OUT_ROOT}/shared" "${OUT_ROOT}/secrets" "${OUT_ROOT}/root-ca.crt"
 tar -C "${OUT_ROOT}" -xf "${tmp_output_tar}"
 
 b64_file() {

@@ -154,5 +154,6 @@ for node in "${workers[@]}"; do
 done
 
 kubectl apply -k "${ROOT_DIR}/k8s/overlays/local"
+"${ROOT_DIR}/scripts/update-ca-configmaps.sh"
 kubectl wait --for=condition=Ready nodes --all --timeout=15m
 kubectl get nodes -o wide

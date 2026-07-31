@@ -13,6 +13,10 @@ rules:
     verbs:
       - approve
     resourceNames:
+      - tpmclusterissuers.pki.sovereignite.io/sovereignite-root
+      - tpmclusterissuers.pki.sovereignite.io/kubernetes-ca
+      - tpmclusterissuers.pki.sovereignite.io/kubernetes-front-proxy-ca
+      - tpmclusterissuers.pki.sovereignite.io/etcd-ca
       - tpmclusterissuers.pki.sovereignite.io/cert-manager-local-ca
       - tpmclusterissuers.pki.sovereignite.io/spire-upstream-ca
       - tpmclusterissuers.pki.sovereignite.io/spire-tpm-devid-ca

@@ -47,40 +47,23 @@ spec:
         - name: spire-server
           image: ghcr.io/sovereignite/spire-server-tpm:1.15.2-sovereignite.0
           command:
-            - /bin/sh
-            - -ceu
-            - |
-              export TPM2_PKCS11_STORE=/run/spire/data/tpm2-pkcs11
-              export TPM2TOOLS_TCTI=device:/dev/tpmrm0
-              export TSS2_TCTI=device:/dev/tpmrm0
-              mkdir -p "${TPM2_PKCS11_STORE}"
-              chmod 0700 "${TPM2_PKCS11_STORE}"
-              if [ ! -f "${TPM2_PKCS11_STORE}/pins.env" ]; then
-                umask 077
-                {
-                  printf 'TPM2_PKCS11_SO_PIN=%s\n' "$(openssl rand -hex 16)"
-                  printf 'TPM2_PKCS11_USER_PIN=%s\n' "$(openssl rand -hex 16)"
-                } > "${TPM2_PKCS11_STORE}/pins.env"
-              fi
-              . "${TPM2_PKCS11_STORE}/pins.env"
-              if [ ! -f "${TPM2_PKCS11_STORE}/tpm2_pkcs11.sqlite3" ] || ! tpm2_ptool listprimaries --path "${TPM2_PKCS11_STORE}" | grep -q "id: 1$"; then
-                tpm2_ptool init --transient-parent tpm2-tools-ecc-default --path "${TPM2_PKCS11_STORE}"
-              fi
-              if ! tpm2_ptool listtokens --path "${TPM2_PKCS11_STORE}" --pid 1 | grep -q "label: sovereignite-spire-ca$"; then
-                tpm2_ptool addtoken \
-                  --path "${TPM2_PKCS11_STORE}" \
-                  --pid 1 \
-                  --label sovereignite-spire-ca \
-                  --sopin "${TPM2_PKCS11_SO_PIN}" \
-                  --userpin "${TPM2_PKCS11_USER_PIN}"
-              fi
-              export TPM_PKCS11_PIN="${TPM2_PKCS11_USER_PIN}"
-              exec /opt/spire/bin/spire-server "$@"
-            - --
+            - /opt/spire/bin/spire-server
           args:
             - run
             - -config
             - /run/spire/config/server.conf
+          env:
+            - name: TPM2_PKCS11_STORE
+              value: /var/lib/sovereignite/tpm2-pkcs11
+            - name: TPM2TOOLS_TCTI
+              value: device:/dev/tpmrm0
+            - name: TSS2_TCTI
+              value: device:/dev/tpmrm0
+            - name: TPM_PKCS11_PIN
+              valueFrom:
+                secretKeyRef:
+                  name: tpm2-pkcs11-pin
+                  key: user-pin
           ports:
             - name: grpc
               containerPort: 8081
@@ -97,6 +80,8 @@ spec:
               readOnly: true
             - name: data
               mountPath: /run/spire/data
+            - name: tpm2-pkcs11
+              mountPath: /var/lib/sovereignite/tpm2-pkcs11
             - name: spire-server-socket
               mountPath: /run/spire/sockets
             - name: tpm-keymanager-socket
@@ -150,6 +135,10 @@ spec:
           hostPath:
             path: /var/lib/sovereignite/spire-server
             type: DirectoryOrCreate
+        - name: tpm2-pkcs11
+          hostPath:
+            path: /var/lib/sovereignite/tpm2-pkcs11
+            type: Directory
         - name: spire-server-socket
           emptyDir: {}
         - name: tpm-keymanager-socket

@@ -15,8 +15,8 @@ certificate profiles, and rotation windows.
   `k8s-tpm-csr-signer`.
 - cert-manager is the lifecycle and request-flow surface for Kubernetes
   `Certificate` resources.
-- Non-control-plane CAs are represented as `TPMClusterIssuer` authorities, not
-  built-in CA issuers with private-key Secrets.
+- The root CA and every subordinate CA are represented as `TPMClusterIssuer`
+  authorities, not built-in CA issuers with private-key Secrets.
 - SPIRE server CA signing uses the external TPM KeyManager plugin.
 
 See `docs/cert-manager-authorities.md` for the cert-manager authority wiring.
@@ -36,6 +36,8 @@ build/pki/
     upstream-ca.crt
     tpm-devid-ca.crt
     tpm-endorsement-ca.crt
+  secrets/
+    tpm2-pkcs11-pin.env
   tpm-devid/
     cp-1/
       devid.crt
@@ -78,6 +80,11 @@ build/pki/
 
 `sa.key` is a Kubernetes service-account signing key, not a CA key. Keep it
 restricted to control-plane nodes.
+
+`secrets/tpm2-pkcs11-pin.env` contains the TPM PKCS#11 token SO and user PINs
+used to create Kubernetes `tpm2-pkcs11-pin` Secrets. It is operational token
+access material, not CA private-key material. The repo ignores `build/`, and the
+file must not be committed.
 
 The `spire/tpm-devid-ca.crt` and `spire/tpm-endorsement-ca.crt` files populate
 the `spire-tpm-attestor-ca` ConfigMap used by the built-in SPIRE `tpm_devid`

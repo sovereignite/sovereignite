@@ -37,6 +37,8 @@ type profile struct {
 	AllowedDNSDomains         []string
 	AllowedSpiffeTrustDomains []string
 	AllowWildcardDNSNames     bool
+	IsCA                      bool
+	MaxPathLen                int
 }
 
 func main() {
@@ -180,6 +182,8 @@ func parseProfiles(raw map[string]any) map[string]profile {
 			AllowedDNSDomains:         kubeapi.StringSlice(m["allowedDNSDomains"]),
 			AllowedSpiffeTrustDomains: kubeapi.StringSlice(m["allowedSpiffeTrustDomains"]),
 			AllowWildcardDNSNames:     kubeapi.BoolValue(m["allowWildcardDNSNames"], false),
+			IsCA:                      kubeapi.BoolValue(m["isCA"], false),
+			MaxPathLen:                int(kubeapi.Int64Value(m["maxPathLen"])),
 		}
 	}
 	if _, ok := out["default"]; !ok {
@@ -196,7 +200,8 @@ func signCertificateRequest(client *kubeapi.Client, iss issuer, cr map[string]an
 		return fmt.Errorf("request is not approved")
 	}
 	spec := kubeapi.NestedMap(cr, "spec")
-	if iss.DenyCARequests && kubeapi.BoolValue(spec["isCA"], false) {
+	requestedCA := kubeapi.BoolValue(spec["isCA"], false)
+	if iss.DenyCARequests && requestedCA {
 		return fmt.Errorf("CA certificate requests are denied")
 	}
 
@@ -229,6 +234,9 @@ func signCertificateRequest(client *kubeapi.Client, iss issuer, cr map[string]an
 		AllowedDNSDomains:         selectedProfile.AllowedDNSDomains,
 		AllowedSpiffeTrustDomains: selectedProfile.AllowedSpiffeTrustDomains,
 		AllowWildcardDNSNames:     selectedProfile.AllowWildcardDNSNames,
+		AllowCA:                   requestedCA && !iss.DenyCARequests && selectedProfile.IsCA,
+		IsCA:                      requestedCA,
+		MaxPathLen:                selectedProfile.MaxPathLen,
 	})
 	if err != nil {
 		return err

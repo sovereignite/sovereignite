@@ -108,6 +108,13 @@ spec:
                       allowWildcardDNSNames:
                         type: boolean
                         default: false
+                      isCA:
+                        type: boolean
+                        default: false
+                      maxPathLen:
+                        type: integer
+                        format: int32
+                        minimum: 0
                 requestPolicy:
                   type: object
                   properties:

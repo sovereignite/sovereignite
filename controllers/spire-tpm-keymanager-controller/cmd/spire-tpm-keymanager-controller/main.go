@@ -61,6 +61,15 @@ func reconcileOne(client *kubeapi.Client, obj map[string]any) error {
 	if kubeapi.StringValue(pkcs11["modulePath"]) == "" || kubeapi.StringValue(pkcs11["tokenLabel"]) == "" {
 		return patch(client, obj, "False", "InvalidSpec", "spec.pkcs11.modulePath and tokenLabel are required", "")
 	}
+	pinRef := kubeapi.Map(pkcs11["userPinSecretRef"])
+	if kubeapi.StringValue(pinRef["name"]) != "" {
+		if kubeapi.StringValue(pinRef["key"]) == "" {
+			return patch(client, obj, "False", "InvalidSpec", "spec.pkcs11.userPinSecretRef.key is required", "")
+		}
+		if _, err := client.GetSecretValue(kubeapi.Namespace(obj), kubeapi.StringValue(pinRef["name"]), kubeapi.StringValue(pinRef["key"])); err != nil {
+			return patch(client, obj, "False", "InvalidSecretRef", err.Error(), "")
+		}
+	}
 	active := kubeapi.StringValue(keys["serverCA"])
 	if active == "" {
 		return patch(client, obj, "False", "InvalidSpec", "spec.keys.serverCA is required", "")

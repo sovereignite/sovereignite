@@ -37,6 +37,8 @@ type Options struct {
 	AllowedSpiffeTrustDomains []string
 	AllowWildcardDNSNames     bool
 	AllowCA                   bool
+	IsCA                      bool
+	MaxPathLen                int
 	SubjectRegexes            []string
 }
 
@@ -56,6 +58,9 @@ func SignCSR(csrBytes []byte, caPEM string, ref PKCS11Ref, opts Options) (*Issue
 	}
 	if err := ValidateCSR(csr, opts); err != nil {
 		return nil, err
+	}
+	if opts.IsCA && !opts.AllowCA {
+		return nil, errors.New("CA certificate requested but CA issuance is not allowed")
 	}
 
 	caCert, err := ParseCertificatePEM([]byte(caPEM))
@@ -84,7 +89,7 @@ func SignCSR(csrBytes []byte, caPEM string, ref PKCS11Ref, opts Options) (*Issue
 		return nil, err
 	}
 
-	keyUsage, extKeyUsage, err := Usages(opts.Usages)
+	keyUsage, extKeyUsage, err := Usages(opts.Usages, opts.AllowCA)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +106,11 @@ func SignCSR(csrBytes []byte, caPEM string, ref PKCS11Ref, opts Options) (*Issue
 		KeyUsage:              keyUsage,
 		ExtKeyUsage:           extKeyUsage,
 		BasicConstraintsValid: true,
-		IsCA:                  false,
+		IsCA:                  opts.IsCA,
+	}
+	if opts.IsCA {
+		template.MaxPathLen = opts.MaxPathLen
+		template.MaxPathLenZero = opts.MaxPathLen == 0
 	}
 
 	der, err := x509.CreateCertificate(rand.Reader, template, caCert, csr.PublicKey, signer)
@@ -226,12 +235,12 @@ func ValidateCSR(csr *x509.CertificateRequest, opts Options) error {
 	return nil
 }
 
-func Usages(usages []string) (x509.KeyUsage, []x509.ExtKeyUsage, error) {
+func Usages(usages []string, allowCA bool) (x509.KeyUsage, []x509.ExtKeyUsage, error) {
 	var keyUsage x509.KeyUsage
 	var ext []x509.ExtKeyUsage
 	for _, usage := range usages {
 		switch normalizeUsage(usage) {
-		case "digital signature":
+		case "digital signature", "signing":
 			keyUsage |= x509.KeyUsageDigitalSignature
 		case "key encipherment":
 			keyUsage |= x509.KeyUsageKeyEncipherment
@@ -239,8 +248,16 @@ func Usages(usages []string) (x509.KeyUsage, []x509.ExtKeyUsage, error) {
 			ext = append(ext, x509.ExtKeyUsageServerAuth)
 		case "client auth":
 			ext = append(ext, x509.ExtKeyUsageClientAuth)
-		case "cert sign", "crl sign":
-			return 0, nil, fmt.Errorf("CA usage %q is not allowed", usage)
+		case "cert sign":
+			if !allowCA {
+				return 0, nil, fmt.Errorf("CA usage %q is not allowed", usage)
+			}
+			keyUsage |= x509.KeyUsageCertSign
+		case "crl sign":
+			if !allowCA {
+				return 0, nil, fmt.Errorf("CA usage %q is not allowed", usage)
+			}
+			keyUsage |= x509.KeyUsageCRLSign
 		case "":
 		default:
 			return 0, nil, fmt.Errorf("unsupported usage %q", usage)

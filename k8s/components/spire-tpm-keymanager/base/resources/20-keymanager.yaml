@@ -8,6 +8,9 @@ spec:
   pkcs11:
     modulePath: /usr/lib64/pkcs11/libtpm2_pkcs11.so
     tokenLabel: sovereignite-ca
+    userPinSecretRef:
+      name: tpm2-pkcs11-pin
+      key: user-pin
   keys:
     upstreamCA: sovereignite-spire-upstream-ca
     serverCA: sovereignite-spire-server-ca
