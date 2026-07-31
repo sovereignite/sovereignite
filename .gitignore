@@ -61,3 +61,6 @@ flycheck_*.el
 *.tfstate.*
 crash.log
 crash.*.log
+
+# local build outputs
+/tpm-devid-provisioner

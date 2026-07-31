@@ -1,0 +1,19 @@
+# Source apiVersion: admissionregistration.k8s.io/v1
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  labels:
+    app.kubernetes.io/name: knative-eventing
+    app.kubernetes.io/version: 1.22.2
+  name: inmemorychannel.eventing.knative.dev
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: inmemorychannel-webhook
+        namespace: knative-eventing
+    failurePolicy: Fail
+    name: inmemorychannel.eventing.knative.dev
+    sideEffects: None
+    timeoutSeconds: 10

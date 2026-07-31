@@ -6,11 +6,8 @@ metadata:
 spec:
   socketPath: /run/spire-tpm-keymanager/keymanager.sock
   pkcs11:
-    modulePath: /usr/lib/x86_64-linux-gnu/pkcs11/libtpm2_pkcs11.so
+    modulePath: /usr/lib64/pkcs11/libtpm2_pkcs11.so
     tokenLabel: sovereignite-ca
-    userPinSecretRef:
-      name: tpm-pkcs11-pin
-      key: user-pin
   keys:
     upstreamCA: sovereignite-spire-upstream-ca
     serverCA: sovereignite-spire-server-ca

@@ -179,7 +179,7 @@ func (p *plugin) config() (pluginConfig, error) {
 
 func parseConfig(hcl string) (pluginConfig, error) {
 	cfg := pluginConfig{
-		ModulePath:     firstNonEmpty(configValue(hcl, "module_path"), os.Getenv("TPM_PKCS11_MODULE"), "/usr/lib/x86_64-linux-gnu/pkcs11/libtpm2_pkcs11.so"),
+		ModulePath:     firstNonEmpty(configValue(hcl, "module_path"), os.Getenv("TPM_PKCS11_MODULE"), "/usr/lib64/pkcs11/libtpm2_pkcs11.so"),
 		TokenLabel:     firstNonEmpty(configValue(hcl, "token_label"), os.Getenv("TPM_PKCS11_TOKEN_LABEL")),
 		UserPIN:        firstNonEmpty(configValue(hcl, "user_pin"), os.Getenv("TPM_PKCS11_PIN")),
 		KeyLabelPrefix: firstNonEmpty(configValue(hcl, "key_label_prefix"), os.Getenv("SPIRE_TPM_KEY_LABEL_PREFIX"), "sovereignite-spire-"),

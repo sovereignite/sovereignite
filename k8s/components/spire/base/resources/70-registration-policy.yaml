@@ -3,7 +3,6 @@ kind: ClusterSPIFFEID
 metadata:
   name: default-workloads
 spec:
-  className: sovereignite
   spiffeIDTemplate: spiffe://sovereignite.local/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}
   podSelector:
     matchLabels: {}

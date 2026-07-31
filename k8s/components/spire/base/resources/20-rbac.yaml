@@ -34,26 +34,55 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - endpoints
+      - namespaces
       - nodes
       - pods
-      - serviceaccounts
     verbs:
       - get
       - list
       - watch
   - apiGroups:
-      - spire.spiffe.io
+      - admissionregistration.k8s.io
     resources:
-      - clusterspiffeids
-      - clusterfederatedtrustdomains
+      - validatingwebhookconfigurations
     verbs:
       - get
       - list
-      - watch
-      - create
-      - update
       - patch
+      - watch
+  - apiGroups:
+      - spire.spiffe.io
+    resources:
+      - clusterfederatedtrustdomains
+      - clusterspiffeids
+      - clusterstaticentries
+    verbs:
+      - create
       - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - spire.spiffe.io
+    resources:
+      - clusterfederatedtrustdomains/finalizers
+      - clusterspiffeids/finalizers
+      - clusterstaticentries/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - spire.spiffe.io
+    resources:
+      - clusterfederatedtrustdomains/status
+      - clusterspiffeids/status
+      - clusterstaticentries/status
+    verbs:
+      - get
+      - patch
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -66,4 +95,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: spire-controller-manager
+    namespace: spire
+  - kind: ServiceAccount
+    name: spire-server
     namespace: spire

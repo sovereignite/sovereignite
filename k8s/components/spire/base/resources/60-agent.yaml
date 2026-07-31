@@ -14,17 +14,29 @@ spec:
     spec:
       serviceAccountName: spire-agent
       hostPID: true
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
       containers:
         - name: spire-agent
           image: ghcr.io/spiffe/spire-agent:1.15.2
           args:
             - -config
             - /run/spire/config/agent.conf
+          env:
+            - name: TPM2TOOLS_TCTI
+              value: device:/dev/tpmrm0
+            - name: TSS2_TCTI
+              value: device:/dev/tpmrm0
           securityContext:
             privileged: true
           volumeMounts:
             - name: config
               mountPath: /run/spire/config
+              readOnly: true
+            - name: trust-bundle
+              mountPath: /run/spire/bundle
               readOnly: true
             - name: spire-sockets
               mountPath: /run/spire/sockets
@@ -37,6 +49,9 @@ spec:
         - name: config
           configMap:
             name: spire-agent-config
+        - name: trust-bundle
+          configMap:
+            name: spire-agent-bundle
         - name: spire-sockets
           hostPath:
             path: /run/spire/sockets

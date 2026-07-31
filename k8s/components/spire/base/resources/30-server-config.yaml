@@ -10,6 +10,7 @@ data:
       bind_port = "8081"
       trust_domain = "sovereignite.local"
       data_dir = "/run/spire/data"
+      socket_path = "/run/spire/sockets/server-api.sock"
       log_level = "INFO"
       ca_ttl = "24h"
       default_x509_svid_ttl = "1h"
@@ -27,8 +28,8 @@ data:
         plugin_cmd = "/opt/spire/plugins/spire-tpm-keymanager"
         plugin_data {
           socket_path = "/run/spire-tpm-keymanager/keymanager.sock"
-          module_path = "/usr/lib/x86_64-linux-gnu/pkcs11/libtpm2_pkcs11.so"
-          token_label = "sovereignite-ca"
+          module_path = "/usr/lib64/pkcs11/libtpm2_pkcs11.so"
+          token_label = "sovereignite-spire-ca"
           key_label_prefix = "sovereignite-spire-"
         }
       }
@@ -37,12 +38,6 @@ data:
         plugin_data {
           devid_ca_path = "/run/spire/tpm-attestor-ca/tpm-devid-ca.pem"
           endorsement_ca_path = "/run/spire/tpm-attestor-ca/tpm-endorsement-ca.pem"
-        }
-      }
-
-      WorkloadAttestor "k8s" {
-        plugin_data {
-          kubelet_read_only_port = 0
         }
       }
     }

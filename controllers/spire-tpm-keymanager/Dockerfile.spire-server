@@ -7,10 +7,9 @@ RUN CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o /out/spire-tpm-keymanag
 
 FROM ghcr.io/spiffe/spire-server:1.15.2 AS spire
 
-FROM debian:bookworm-slim
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates libtpm2-pkcs11-1 \
-    && rm -rf /var/lib/apt/lists/*
+FROM fedora:44
+RUN dnf -y install ca-certificates openssl tpm2-pkcs11 tpm2-pkcs11-tools tpm2-tools \
+    && dnf clean all
 COPY --from=spire /opt/spire/bin/spire-server /opt/spire/bin/spire-server
 COPY --from=build /out/spire-tpm-keymanager /opt/spire/plugins/spire-tpm-keymanager
 USER 65532:65532

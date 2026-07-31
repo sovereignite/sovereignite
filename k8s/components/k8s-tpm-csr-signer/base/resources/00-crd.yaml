@@ -85,6 +85,8 @@ spec:
                           type: string
                         key:
                           type: string
+                    userPinEnv:
+                      type: string
                 allowedUsages:
                   type: array
                   minItems: 1

@@ -16,6 +16,7 @@ spec:
       serviceAccountName: tpm-cluster-issuer
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
+        kubernetes.io/hostname: cp-1
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           operator: Exists
@@ -23,6 +24,17 @@ spec:
       containers:
         - name: controller
           image: ghcr.io/sovereignite/tpm-cluster-issuer:v0.1.0
+          command:
+            - /bin/sh
+            - -ceu
+            - |
+              . /var/lib/sovereignite/tpm2-pkcs11/pins.env
+              export TPM2_PKCS11_STORE=/var/lib/sovereignite/tpm2-pkcs11
+              export TPM2TOOLS_TCTI=device:/dev/tpmrm0
+              export TSS2_TCTI=device:/dev/tpmrm0
+              export TPM2_PKCS11_USER_PIN
+              exec /usr/local/bin/tpm-cluster-issuer "$@"
+            - --
           args:
             - --issuer-group=pki.sovereignite.io
             - --issuer-kind=TPMClusterIssuer
