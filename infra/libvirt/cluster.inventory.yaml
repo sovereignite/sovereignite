@@ -46,6 +46,9 @@ spec:
     flatcarImage:
       url: https://stable.release.flatcar-linux.net/amd64-usr/4593.2.4/flatcar_production_qemu_uefi_secure_image.img.bz2
       decompressedName: flatcar-stable-4593.2.4-uefi-secure.qcow2
+    flatcarInstallerIso:
+      url: https://stable.release.flatcar-linux.net/amd64-usr/4593.2.4/flatcar_production_iso_image.iso
+      name: flatcar-stable-4593.2.4-installer.iso
   kubeadm:
     certificateValidity: 8760h
     caCertificateValidity: 87600h

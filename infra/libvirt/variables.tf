@@ -11,6 +11,13 @@ variable "flatcar_image_path" {
   nullable    = true
 }
 
+variable "flatcar_iso_path" {
+  description = "Path to the Flatcar installer ISO. Defaults to build/images/<inventory installer ISO name>."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
 variable "create_managed_network" {
   description = "Create a libvirt NAT network instead of attaching VMs to the inventory bridge."
   type        = bool

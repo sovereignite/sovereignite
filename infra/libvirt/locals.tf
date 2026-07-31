@@ -19,4 +19,8 @@ locals {
     var.flatcar_image_path,
     abspath("${path.module}/build/images/${local.libvirt.flatcarImage.decompressedName}")
   )
+  flatcar_iso_path = coalesce(
+    var.flatcar_iso_path,
+    abspath("${path.module}/build/images/${local.libvirt.flatcarInstallerIso.name}")
+  )
 }

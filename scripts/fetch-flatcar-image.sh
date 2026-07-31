@@ -18,8 +18,11 @@ require bunzip2
 
 url="$(yq -r '.spec.libvirt.flatcarImage.url' "${INVENTORY}")"
 name="$(yq -r '.spec.libvirt.flatcarImage.decompressedName' "${INVENTORY}")"
+iso_url="$(yq -r '.spec.libvirt.flatcarInstallerIso.url' "${INVENTORY}")"
+iso_name="$(yq -r '.spec.libvirt.flatcarInstallerIso.name' "${INVENTORY}")"
 archive="${OUT_DIR}/${name}.bz2"
 image="${OUT_DIR}/${name}"
+iso="${OUT_DIR}/${iso_name}"
 
 mkdir -p "${OUT_DIR}"
 
@@ -31,4 +34,9 @@ if [ ! -f "${image}" ]; then
   bunzip2 -kc "${archive}" > "${image}"
 fi
 
+if [ ! -f "${iso}" ]; then
+  curl -fL --retry 5 --retry-delay 5 -o "${iso}" "${iso_url}"
+fi
+
 echo "${image}"
+echo "${iso}"

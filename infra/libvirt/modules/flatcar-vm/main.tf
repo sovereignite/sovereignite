@@ -9,13 +9,6 @@ resource "libvirt_volume" "root" {
       type = "qcow2"
     }
   }
-
-  backing_store = {
-    path = var.base_volume_path
-    format = {
-      type = "qcow2"
-    }
-  }
 }
 
 resource "libvirt_domain" "this" {
@@ -31,18 +24,24 @@ resource "libvirt_domain" "this" {
   }
 
   os = {
-    type            = "hvm"
-    type_arch       = "x86_64"
-    type_machine    = "q35"
-    loader          = var.ovmf_code
-    loader_readonly = "yes"
-    loader_secure   = "yes"
-    loader_type     = "pflash"
-    nv_ram = {
-      nv_ram   = var.nvram_path
-      template = var.ovmf_vars_template
+    firmware     = "efi"
+    type         = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+    firmware_info = {
+      features = [
+        {
+          enabled = "yes"
+          name    = "enrolled-keys"
+        },
+        {
+          enabled = "yes"
+          name    = "secure-boot"
+        }
+      ]
     }
     boot_devices = [
+      { dev = "cdrom" },
       { dev = "hd" }
     ]
   }
@@ -73,6 +72,24 @@ resource "libvirt_domain" "this" {
           dev = "vda"
           bus = "virtio"
         }
+      },
+      {
+        type   = "file"
+        device = "cdrom"
+        driver = {
+          name = "qemu"
+          type = "raw"
+        }
+        source = {
+          file = {
+            file = var.installer_iso
+          }
+        }
+        target = {
+          dev = "sda"
+          bus = "sata"
+        }
+        read_only = true
       }
     ]
 

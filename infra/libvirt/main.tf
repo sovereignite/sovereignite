@@ -16,6 +16,24 @@ resource "libvirt_volume" "flatcar_base" {
   }
 }
 
+resource "libvirt_volume" "flatcar_installer_iso" {
+  name = local.libvirt.flatcarInstallerIso.name
+  pool = local.libvirt.pool
+  type = "file"
+
+  target = {
+    format = {
+      type = "raw"
+    }
+  }
+
+  create = {
+    content = {
+      url = "file://${local.flatcar_iso_path}"
+    }
+  }
+}
+
 resource "libvirt_network" "managed" {
   count = var.create_managed_network ? 1 : 0
 
@@ -83,11 +101,11 @@ module "flatcar_vm" {
 
   for_each = local.nodes_by_name
 
-  name             = each.value.name
-  role             = each.value.role
-  pool             = local.libvirt.pool
-  base_volume_path = libvirt_volume.flatcar_base.path
-  share_path       = abspath("${path.module}/build/shares/${each.value.name}")
+  name          = each.value.name
+  role          = each.value.role
+  pool          = local.libvirt.pool
+  installer_iso = libvirt_volume.flatcar_installer_iso.path
+  share_path    = abspath("${path.module}/build/shares/${each.value.name}")
 
   vcpu       = each.value.vcpu
   memory_mib = each.value.memoryMiB

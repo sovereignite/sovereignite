@@ -10,7 +10,7 @@ variable "pool" {
   type = string
 }
 
-variable "base_volume_path" {
+variable "installer_iso" {
   type = string
 }
 
