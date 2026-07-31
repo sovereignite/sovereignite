@@ -35,7 +35,7 @@ spec:
       dns:
         - 10.10.10.1
     firmware:
-      ovmfCode: /run/libvirt/nix-ovmf/edk2-x86_64-secure-code.fd
+      ovmfCode: /nix/store/8q4hiprv3kkvhqwji33z4k59hkbk1y4c-OVMF-202411-fd/FV/OVMF_CODE.fd
       ovmfVarsTemplate: /nix/store/8q4hiprv3kkvhqwji33z4k59hkbk1y4c-OVMF-202411-fd/FV/OVMF_VARS.ms.fd
       nvramDir: /var/lib/libvirt/qemu/nvram
     tpm:

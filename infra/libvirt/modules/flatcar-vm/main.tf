@@ -31,21 +31,16 @@ resource "libvirt_domain" "this" {
   }
 
   os = {
-    firmware     = "efi"
-    type         = "hvm"
-    type_arch    = "x86_64"
-    type_machine = "q35"
-    firmware_info = {
-      features = [
-        {
-          enabled = "yes"
-          name    = "enrolled-keys"
-        },
-        {
-          enabled = "yes"
-          name    = "secure-boot"
-        }
-      ]
+    type            = "hvm"
+    type_arch       = "x86_64"
+    type_machine    = "q35"
+    loader          = var.ovmf_code
+    loader_readonly = "yes"
+    loader_secure   = "yes"
+    loader_type     = "pflash"
+    nv_ram = {
+      nv_ram   = var.nvram_path
+      template = var.ovmf_vars_template
     }
     boot_devices = [
       { dev = "hd" }
