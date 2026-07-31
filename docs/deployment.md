@@ -39,6 +39,15 @@ into deterministic YAML files, and writes those files under
 
 The final overlay only references local bases.
 
+### Fedora CoreOS Volume Plugin Path
+
+Fedora CoreOS keeps `/usr` read-only. Kubernetes' default flexvolume path is
+under `/usr/libexec`, so the kubeadm render path sets both kubelet
+`volume-plugin-dir` and kube-controller-manager `flex-volume-plugin-dir` to
+`/var/lib/kubelet/volumeplugins/`. Calico's `Installation` resource must use
+the same `flexVolumePath`; otherwise `calico-node` fails to mount the host path
+and all nodes remain `NotReady`.
+
 ## 3. Build Controller Images
 
 The custom components are ordinary Go programs under `controllers/*/cmd` with
@@ -92,14 +101,18 @@ place per-node kubeadm leaf material under:
 
 ```text
 build/pki/nodes/<node>/
+  pki/
+  etc-kubernetes/
 ```
 
-Each node directory must contain only public CA certificates and leaf
-certificate/private-key pairs required by kubeadm. CA private keys are rejected
-by `scripts/stage-pki-to-nodes.sh`.
+Each node directory must contain only public CA certificates, signed kubeadm
+kubeconfigs, and leaf certificate/private-key pairs required by kubeadm. CA
+private keys are rejected by the staging scripts.
 
 ```bash
+scripts/generate-kubeadm-external-pki.sh
 scripts/assert-no-ca-private-keys.sh
+scripts/stage-kubeadm-pki-to-nodes.sh
 scripts/stage-pki-to-nodes.sh
 scripts/bootstrap-kubeadm.sh
 scripts/update-ca-configmaps.sh

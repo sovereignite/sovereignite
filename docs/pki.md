@@ -21,6 +21,7 @@ certificate profiles, and rotation windows.
 
 ```text
 build/pki/
+  root-ca.crt
   kubernetes/
     ca.crt
     front-proxy-ca.crt
@@ -38,29 +39,37 @@ build/pki/
       devid.pub.blob
   nodes/
     cp-1/
-      ca.crt
-      apiserver.crt
-      apiserver.key
-      apiserver-kubelet-client.crt
-      apiserver-kubelet-client.key
-      front-proxy-ca.crt
-      front-proxy-client.crt
-      front-proxy-client.key
-      etcd/ca.crt
-      etcd/server.crt
-      etcd/server.key
-      etcd/peer.crt
-      etcd/peer.key
-      etcd/healthcheck-client.crt
-      etcd/healthcheck-client.key
-      sa.pub
-      sa.key
+      pki/
+        ca.crt
+        apiserver.crt
+        apiserver.key
+        apiserver-kubelet-client.crt
+        apiserver-kubelet-client.key
+        front-proxy-ca.crt
+        front-proxy-client.crt
+        front-proxy-client.key
+        etcd/ca.crt
+        etcd/server.crt
+        etcd/server.key
+        etcd/peer.crt
+        etcd/peer.key
+        etcd/healthcheck-client.crt
+        etcd/healthcheck-client.key
+        sa.pub
+        sa.key
+      etc-kubernetes/
+        admin.conf
+        controller-manager.conf
+        scheduler.conf
+        super-admin.conf
+        kubelet.conf
     cp-2/
       ...
     worker-1/
-      ca.crt
-      kubelet-client.crt
-      kubelet-client.key
+      pki/
+        ca.crt
+      etc-kubernetes/
+        kubelet.conf
 ```
 
 `sa.key` is a Kubernetes service-account signing key, not a CA key. Keep it
@@ -81,5 +90,11 @@ Run this before copying PKI to nodes:
 scripts/assert-no-ca-private-keys.sh
 ```
 
-`scripts/stage-pki-to-nodes.sh` repeats the same check per node before copying
-anything to `/opt/sovereignite/pki/kubernetes`.
+`scripts/generate-kubeadm-external-pki.sh` creates the kubeadm external-CA
+bundle by signing kubeadm-generated CSRs with TPM-resident CA keys on the CA
+node. `scripts/stage-kubeadm-pki-to-nodes.sh` repeats the no-CA-key check per
+node before copying kubeadm PKI into `/etc/kubernetes/pki` and signed
+kubeconfigs into `/etc/kubernetes`.
+
+`scripts/stage-pki-to-nodes.sh` remains the full PKI staging path once SPIRE TPM
+DevID material exists for every node.

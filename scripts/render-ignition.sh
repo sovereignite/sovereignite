@@ -144,6 +144,8 @@ nodeRegistration:
   kubeletExtraArgs:
     - name: node-ip
       value: ${NODE_IP}
+    - name: volume-plugin-dir
+      value: /var/lib/kubelet/volumeplugins/
 ---
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
@@ -163,6 +165,8 @@ controllerManager:
   extraArgs:
     - name: controllers
       value: "*,bootstrapsigner,tokencleaner,-csrsigning"
+    - name: flex-volume-plugin-dir
+      value: /var/lib/kubelet/volumeplugins/
 ---
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
@@ -183,6 +187,8 @@ nodeRegistration:
   kubeletExtraArgs:
     - name: node-ip
       value: ${NODE_IP}
+    - name: volume-plugin-dir
+      value: /var/lib/kubelet/volumeplugins/
 ---
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
