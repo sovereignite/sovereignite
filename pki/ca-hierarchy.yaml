@@ -1,0 +1,174 @@
+apiVersion: pki.sovereignite.io/v1alpha1
+kind: CAHierarchy
+metadata:
+  name: sovereignite
+spec:
+  tpm:
+    pkcs11Module: /usr/lib/x86_64-linux-gnu/pkcs11/libtpm2_pkcs11.so
+    tokenLabel: sovereignite-ca
+    userPinEnv: TPM2_PKCS11_USER_PIN
+    soPinEnv: TPM2_PKCS11_SO_PIN
+  roots:
+    - name: sovereignite-root
+      commonName: Sovereignite TPM Root CA
+      pkcs11Label: sovereignite-root-ca
+      profile: root-ca
+      validity: 87600h
+      pathLen: 2
+  intermediates:
+    - name: kubernetes-ca
+      commonName: Sovereignite Kubernetes CA
+      parent: sovereignite-root
+      pkcs11Label: sovereignite-kubernetes-ca
+      profile: kubernetes-ca
+      validity: 43800h
+      rotationWindow: 720h
+      outputs:
+        publicCertificate: build/pki/kubernetes/ca.crt
+    - name: kubernetes-front-proxy-ca
+      commonName: Sovereignite Kubernetes Front Proxy CA
+      parent: sovereignite-root
+      pkcs11Label: sovereignite-front-proxy-ca
+      profile: kubernetes-front-proxy-ca
+      validity: 43800h
+      rotationWindow: 720h
+      outputs:
+        publicCertificate: build/pki/kubernetes/front-proxy-ca.crt
+    - name: etcd-ca
+      commonName: Sovereignite etcd CA
+      parent: sovereignite-root
+      pkcs11Label: sovereignite-etcd-ca
+      profile: etcd-ca
+      validity: 43800h
+      rotationWindow: 720h
+      outputs:
+        publicCertificate: build/pki/kubernetes/etcd/ca.crt
+    - name: cert-manager-local-ca
+      commonName: Sovereignite cert-manager Local CA
+      parent: sovereignite-root
+      pkcs11Label: sovereignite-cert-manager-ca
+      profile: cert-manager-local-ca
+      validity: 43800h
+      rotationWindow: 720h
+      outputs:
+        publicCertificate: build/pki/cert-manager/ca.crt
+    - name: spire-upstream-ca
+      commonName: Sovereignite SPIRE Upstream CA
+      parent: sovereignite-root
+      pkcs11Label: sovereignite-spire-upstream-ca
+      profile: spire-upstream-ca
+      validity: 43800h
+      rotationWindow: 720h
+      outputs:
+        publicCertificate: build/pki/spire/upstream-ca.crt
+    - name: spire-tpm-devid-ca
+      commonName: Sovereignite SPIRE TPM DevID CA
+      parent: sovereignite-root
+      pkcs11Label: sovereignite-spire-tpm-devid-ca
+      profile: spire-tpm-devid-ca
+      validity: 43800h
+      rotationWindow: 720h
+      outputs:
+        publicCertificate: build/pki/spire/tpm-devid-ca.crt
+    - name: spire-tpm-endorsement-ca
+      commonName: Sovereignite SPIRE TPM Endorsement CA
+      parent: sovereignite-root
+      pkcs11Label: sovereignite-spire-tpm-endorsement-ca
+      profile: spire-tpm-endorsement-ca
+      validity: 43800h
+      rotationWindow: 720h
+      outputs:
+        publicCertificate: build/pki/spire/tpm-endorsement-ca.crt
+  profiles:
+    root-ca:
+      keyUsage:
+        - certSign
+        - crlSign
+      basicConstraints:
+        isCA: true
+        maxPathLen: 2
+    kubernetes-ca:
+      keyUsage:
+        - certSign
+        - crlSign
+      basicConstraints:
+        isCA: true
+        maxPathLen: 1
+    kubernetes-front-proxy-ca:
+      keyUsage:
+        - certSign
+        - crlSign
+      basicConstraints:
+        isCA: true
+        maxPathLen: 1
+    etcd-ca:
+      keyUsage:
+        - certSign
+        - crlSign
+      basicConstraints:
+        isCA: true
+        maxPathLen: 1
+    cert-manager-local-ca:
+      keyUsage:
+        - certSign
+        - crlSign
+      basicConstraints:
+        isCA: true
+        maxPathLen: 1
+    spire-upstream-ca:
+      keyUsage:
+        - certSign
+        - crlSign
+      basicConstraints:
+        isCA: true
+        maxPathLen: 1
+    spire-tpm-devid-ca:
+      keyUsage:
+        - certSign
+        - crlSign
+      basicConstraints:
+        isCA: true
+        maxPathLen: 1
+    spire-tpm-endorsement-ca:
+      keyUsage:
+        - certSign
+        - crlSign
+      basicConstraints:
+        isCA: true
+        maxPathLen: 1
+    kube-apiserver:
+      keyUsage:
+        - digitalSignature
+        - keyEncipherment
+      extendedKeyUsage:
+        - serverAuth
+      validity: 8760h
+    kubelet-client:
+      keyUsage:
+        - digitalSignature
+      extendedKeyUsage:
+        - clientAuth
+      validity: 8760h
+    kubelet-serving:
+      keyUsage:
+        - digitalSignature
+        - keyEncipherment
+      extendedKeyUsage:
+        - serverAuth
+      validity: 8760h
+    workload:
+      keyUsage:
+        - digitalSignature
+        - keyEncipherment
+      extendedKeyUsage:
+        - serverAuth
+        - clientAuth
+      validity: 24h
+  policy:
+    forbidKubernetesCAKeySecrets: true
+    forbidNodeCAKeys: true
+    kubeadmExternalCA: true
+    csrSignerNames:
+      - sovereignite.local/tpm-kubelet-client
+      - sovereignite.local/tpm-kubelet-serving
+    spireTrustDomain: sovereignite.local

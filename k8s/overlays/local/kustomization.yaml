@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - resources/00-sovereignite-system-namespace.yaml
+  - resources/10-ca-public-configmaps.yaml
+  - ../../components/gateway-api/base
+  - ../../components/calico/base
+  - ../../components/tpm-cluster-issuer/base
+  - ../../components/k8s-tpm-csr-signer/base
+  - ../../components/spire-tpm-keymanager/base
+  - ../../components/cert-manager/base
+  - ../../components/spire/base
+  - ../../components/istio/base
+  - ../../components/knative-serving/base
+  - ../../components/knative-eventing/base
+  - ../../components/knative-net-gateway-api/base
+  - ../../components/private-gateway/base
+  - ../../components/mesh-security/base
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: sovereignite

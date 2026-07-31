@@ -1,0 +1,79 @@
+# Source apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: knative-eventing
+    app.kubernetes.io/version: 1.22.2
+  name: knative-eventing-job-sink
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - create
+      - update
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - sinks.knative.dev
+    resources:
+      - jobsinks
+      - jobsinks/status
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+  - apiGroups:
+      - sinks.knative.dev
+    resources:
+      - jobsinks/finalizers
+    verbs:
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - eventing.knative.dev
+    resources:
+      - eventpolicies
+    verbs:
+      - get
+      - list
+      - watch

@@ -1,0 +1,17 @@
+FROM golang:1.26-bookworm AS build
+WORKDIR /src
+COPY go.mod go.sum* ./
+RUN go mod download
+COPY controllers ./controllers
+RUN CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o /out/spire-tpm-keymanager ./controllers/spire-tpm-keymanager/cmd/spire-tpm-keymanager
+
+FROM ghcr.io/spiffe/spire-server:1.15.2 AS spire
+
+FROM debian:bookworm-slim
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates libtpm2-pkcs11-1 \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=spire /opt/spire/bin/spire-server /opt/spire/bin/spire-server
+COPY --from=build /out/spire-tpm-keymanager /opt/spire/plugins/spire-tpm-keymanager
+USER 65532:65532
+ENTRYPOINT ["/opt/spire/bin/spire-server"]

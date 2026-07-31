@@ -1,0 +1,93 @@
+# Source apiVersion: apps/v1
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: activator
+    app.kubernetes.io/name: knative-serving
+    app.kubernetes.io/version: 1.22.1
+  name: activator
+  namespace: knative-serving
+spec:
+  selector:
+    matchLabels:
+      app: activator
+      role: activator
+  template:
+    metadata:
+      labels:
+        app: activator
+        app.kubernetes.io/component: activator
+        app.kubernetes.io/name: knative-serving
+        app.kubernetes.io/version: 1.22.1
+        role: activator
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: activator
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      containers:
+        - env:
+            - name: GOGC
+              value: "500"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: SYSTEM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CONFIG_LOGGING_NAME
+              value: config-logging
+            - name: CONFIG_OBSERVABILITY_NAME
+              value: config-observability
+          image: gcr.io/knative-releases/knative.dev/serving/cmd/activator@sha256:5deaef961fef8d1417f6d4a4dfae2fc338f2d30d72c4ad58c3ab392b2c04705b
+          livenessProbe:
+            failureThreshold: 12
+            httpGet:
+              port: 8012
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          name: activator
+          ports:
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 8008
+              name: profiling
+            - containerPort: 8012
+              name: http1
+            - containerPort: 8013
+              name: h2c
+          readinessProbe:
+            failureThreshold: 5
+            httpGet:
+              port: 8012
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 600Mi
+            requests:
+              cpu: 300m
+              memory: 60Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+      serviceAccountName: activator
+      terminationGracePeriodSeconds: 600

@@ -1,0 +1,80 @@
+# Source apiVersion: apps/v1
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: net-gateway-api
+    app.kubernetes.io/name: knative-serving
+    app.kubernetes.io/version: 1.22.1
+    networking.knative.dev/ingress-provider: gateway-api
+  name: net-gateway-api-webhook
+  namespace: knative-serving
+spec:
+  selector:
+    matchLabels:
+      app: net-gateway-api-webhook
+      role: net-gateway-api-webhook
+  template:
+    metadata:
+      labels:
+        app: net-gateway-api-webhook
+        app.kubernetes.io/component: net-gateway-api
+        app.kubernetes.io/name: knative-serving
+        app.kubernetes.io/version: 1.22.1
+        role: net-gateway-api-webhook
+    spec:
+      containers:
+        - env:
+            - name: SYSTEM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CONFIG_LOGGING_NAME
+              value: config-logging
+            - name: CONFIG_OBSERVABILITY_NAME
+              value: config-observability
+            - name: METRICS_DOMAIN
+              value: knative.dev/net-gateway-api
+            - name: WEBHOOK_NAME
+              value: net-gateway-api-webhook
+            - name: WEBHOOK_PORT
+              value: "8443"
+          image: gcr.io/knative-releases/knative.dev/net-gateway-api/cmd/webhook@sha256:295ea080a33b4fa82449df710420564c4c0fff7026a4e0ddad431acd8e1c7a33
+          livenessProbe:
+            failureThreshold: 6
+            httpGet:
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 20
+            periodSeconds: 1
+          name: webhook
+          ports:
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 8008
+              name: profiling
+            - containerPort: 8443
+              name: https-webhook
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              port: 8443
+              scheme: HTTPS
+            periodSeconds: 1
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 20m
+              memory: 20Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+      serviceAccountName: controller

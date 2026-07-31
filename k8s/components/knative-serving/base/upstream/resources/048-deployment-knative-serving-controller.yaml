@@ -1,0 +1,85 @@
+# Source apiVersion: apps/v1
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: knative-serving
+    app.kubernetes.io/version: 1.22.1
+  name: controller
+  namespace: knative-serving
+spec:
+  selector:
+    matchLabels:
+      app: controller
+  template:
+    metadata:
+      labels:
+        app: controller
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/name: knative-serving
+        app.kubernetes.io/version: 1.22.1
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: controller
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      containers:
+        - env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SYSTEM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CONFIG_LOGGING_NAME
+              value: config-logging
+            - name: CONFIG_OBSERVABILITY_NAME
+              value: config-observability
+          image: gcr.io/knative-releases/knative.dev/serving/cmd/controller@sha256:94329d85200c2fc31ed1166a26568ca1357376c149c147e71f400cf28be3c816
+          livenessProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /health
+              port: probes
+              scheme: HTTP
+            periodSeconds: 5
+          name: controller
+          ports:
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 8008
+              name: profiling
+            - containerPort: 8080
+              name: probes
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /readiness
+              port: probes
+              scheme: HTTP
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1000Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+      serviceAccountName: controller

@@ -1,0 +1,286 @@
+# Source apiVersion: v1
+apiVersion: v1
+data:
+  merged-values: |-
+    {
+      "affinity": {},
+      "autoscaleBehavior": {},
+      "autoscaleEnabled": true,
+      "autoscaleMax": 5,
+      "autoscaleMin": 1,
+      "base": {
+        "enableIstioConfigCRDs": true
+      },
+      "cni": {
+        "enabled": false,
+        "provider": "default"
+      },
+      "configMap": true,
+      "cpu": {
+        "targetAverageUtilization": 80
+      },
+      "deploymentAnnotations": {},
+      "deploymentLabels": {},
+      "env": {
+        "ENABLE_NATIVE_SIDECARS": "true"
+      },
+      "envVarFrom": [],
+      "experimental": {
+        "stableValidationPolicy": false
+      },
+      "extraContainerArgs": [],
+      "gatewayClasses": {},
+      "gateways": {
+        "seccompProfile": {},
+        "securityContext": {}
+      },
+      "global": {
+        "caAddress": "spire-server.spire.svc:8081",
+        "caName": "",
+        "certSigners": [],
+        "configCluster": false,
+        "configValidation": true,
+        "defaultPodDisruptionBudget": {
+          "enabled": true
+        },
+        "defaultResources": {
+          "requests": {
+            "cpu": "10m"
+          }
+        },
+        "externalIstiod": false,
+        "hub": "registry.istio.io/release",
+        "imagePullPolicy": "",
+        "imagePullSecrets": [],
+        "istioNamespace": "istio-system",
+        "istiod": {
+          "enableAnalysis": false
+        },
+        "logAsJson": false,
+        "logging": {
+          "level": "default:info"
+        },
+        "meshID": "sovereignite",
+        "meshNetworks": {},
+        "mountMtlsCerts": false,
+        "multiCluster": {
+          "clusterName": "sovereignite"
+        },
+        "nativeNftables": false,
+        "network": "",
+        "networkPolicy": {
+          "enabled": false
+        },
+        "omitSidecarInjectorConfigMap": false,
+        "operatorManageWebhooks": false,
+        "pilotCertProvider": "istiod",
+        "priorityClassName": "",
+        "proxy": {
+          "autoInject": "enabled",
+          "clusterDomain": "cluster.local",
+          "componentLogLevel": "misc:error",
+          "excludeIPRanges": "",
+          "excludeInboundPorts": "",
+          "excludeOutboundPorts": "",
+          "image": "proxyv2",
+          "includeIPRanges": "*",
+          "includeInboundPorts": "*",
+          "includeOutboundPorts": "",
+          "logLevel": "warning",
+          "outlierLogPath": "",
+          "privileged": false,
+          "readinessFailureThreshold": 4,
+          "readinessInitialDelaySeconds": 0,
+          "readinessPeriodSeconds": 15,
+          "resources": {
+            "limits": {
+              "cpu": "2000m",
+              "memory": "1024Mi"
+            },
+            "requests": {
+              "cpu": "100m",
+              "memory": "128Mi"
+            }
+          },
+          "seccompProfile": {},
+          "startupProbe": {
+            "enabled": true,
+            "failureThreshold": 600
+          },
+          "statusPort": 15020,
+          "tracer": "none"
+        },
+        "proxy_init": {
+          "forceApplyIptables": false,
+          "image": "proxyv2"
+        },
+        "remotePilotAddress": "",
+        "resourceScope": "all",
+        "sds": {
+          "token": {
+            "aud": "spire-server"
+          }
+        },
+        "sts": {
+          "servicePort": 0
+        },
+        "tag": "1.30.3",
+        "variant": "",
+        "waypoint": {
+          "affinity": {},
+          "nodeSelector": {},
+          "resources": {
+            "limits": {
+              "cpu": "2",
+              "memory": "1Gi"
+            },
+            "requests": {
+              "cpu": "100m",
+              "memory": "128Mi"
+            }
+          },
+          "tolerations": [],
+          "topologySpreadConstraints": []
+        }
+      },
+      "hub": "",
+      "image": "pilot",
+      "initContainers": [],
+      "ipFamilies": [],
+      "ipFamilyPolicy": "",
+      "istiodRemote": {
+        "enabled": false,
+        "enabledLocalInjectorIstiod": false,
+        "injectionCABundle": "",
+        "injectionPath": "/inject",
+        "injectionURL": ""
+      },
+      "jwksResolverExtraRootCA": "",
+      "keepaliveMaxServerConnectionAge": "30m",
+      "memory": {},
+      "meshConfig": {
+        "accessLogFile": "/dev/stdout",
+        "defaultConfig": {
+          "holdApplicationUntilProxyStarts": true,
+          "proxyMetadata": {
+            "ISTIO_META_CERT_SIGNER": "spiffe.io/spire"
+          }
+        },
+        "enablePrometheusMerge": true,
+        "trustDomain": "sovereignite.local"
+      },
+      "nodeSelector": {},
+      "ownerName": "",
+      "pdb": {
+        "minAvailable": 1,
+        "unhealthyPodEvictionPolicy": ""
+      },
+      "pilot": {
+        "env": {
+          "ENABLE_NATIVE_SIDECARS": "true"
+        }
+      },
+      "podAnnotations": {},
+      "podLabels": {},
+      "replicaCount": 1,
+      "resources": {
+        "requests": {
+          "cpu": "500m",
+          "memory": "2048Mi"
+        }
+      },
+      "revision": "",
+      "revisionTags": [],
+      "rollingMaxSurge": "100%",
+      "rollingMaxUnavailable": "25%",
+      "seccompProfile": {},
+      "serviceAccountAnnotations": {},
+      "serviceAnnotations": {},
+      "sidecarInjectorWebhook": {
+        "alwaysInjectSelector": [],
+        "defaultTemplates": [],
+        "enableNamespacesByDefault": false,
+        "injectedAnnotations": {},
+        "neverInjectSelector": [],
+        "reinvocationPolicy": "Never",
+        "rewriteAppHTTPProbe": true,
+        "templates": {}
+      },
+      "sidecarInjectorWebhookAnnotations": {},
+      "tag": "",
+      "taint": {
+        "enabled": false,
+        "name": "cni.istio.io/not-ready",
+        "namespace": ""
+      },
+      "telemetry": {
+        "enabled": true,
+        "v2": {
+          "enabled": true,
+          "prometheus": {
+            "enabled": true
+          },
+          "stackdriver": {
+            "enabled": false
+          }
+        }
+      },
+      "tolerations": [],
+      "topologySpreadConstraints": [],
+      "traceSampling": 1,
+      "trustedZtunnelName": "",
+      "trustedZtunnelNamespace": "",
+      "variant": "",
+      "volumeMounts": [],
+      "volumes": []
+    }
+  original-values: |-
+    {
+      "global": {
+        "caAddress": "spire-server.spire.svc:8081",
+        "meshID": "sovereignite",
+        "multiCluster": {
+          "clusterName": "sovereignite"
+        },
+        "proxy": {
+          "privileged": false
+        },
+        "sds": {
+          "token": {
+            "aud": "spire-server"
+          }
+        }
+      },
+      "meshConfig": {
+        "accessLogFile": "/dev/stdout",
+        "defaultConfig": {
+          "holdApplicationUntilProxyStarts": true,
+          "proxyMetadata": {
+            "ISTIO_META_CERT_SIGNER": "spiffe.io/spire"
+          }
+        },
+        "trustDomain": "sovereignite.local"
+      },
+      "pilot": {
+        "env": {
+          "ENABLE_NATIVE_SIDECARS": "true"
+        }
+      }
+    }
+kind: ConfigMap
+metadata:
+  annotations:
+    kubernetes.io/description: This ConfigMap contains the Helm values used during chart rendering. This ConfigMap is rendered for debugging purposes and external tooling; modifying these values has no effect.
+  labels:
+    app.kubernetes.io/instance: istiod
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: istiod
+    app.kubernetes.io/part-of: istio
+    app.kubernetes.io/version: 1.30.3
+    helm.sh/chart: istiod-1.30.3
+    install.operator.istio.io/owning-resource: unknown
+    istio.io/rev: default
+    operator.istio.io/component: Pilot
+    release: istiod
+  name: values
+  namespace: istio-system

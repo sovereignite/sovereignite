@@ -1,0 +1,15 @@
+# Source apiVersion: networking.internal.knative.dev/v1alpha1
+apiVersion: networking.internal.knative.dev/v1alpha1
+kind: Certificate
+metadata:
+  annotations:
+    networking.knative.dev/certificate.class: cert-manager.certificate.networking.knative.dev
+  labels:
+    networking.knative.dev/certificate-type: system-internal
+  name: routing-serving-certs
+  namespace: knative-serving
+spec:
+  dnsNames:
+    - kn-routing
+    - data-plane.knative.dev
+  secretName: routing-serving-certs

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-network
+  namespace: knative-serving
+data:
+  ingress-class: gateway-api.ingress.networking.knative.dev
+  default-external-scheme: http
+  auto-tls: Disabled
+  namespace-wildcard-cert-selector: '{}'

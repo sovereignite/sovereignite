@@ -1,0 +1,82 @@
+# Source apiVersion: apps/v1
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: net-gateway-api
+    app.kubernetes.io/name: knative-serving
+    app.kubernetes.io/version: 1.22.1
+    networking.knative.dev/ingress-provider: net-gateway-api
+  name: net-gateway-api-controller
+  namespace: knative-serving
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: net-gateway-api-controller
+  template:
+    metadata:
+      labels:
+        app: net-gateway-api-controller
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: net-gateway-api-controller
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      containers:
+        - env:
+            - name: SYSTEM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CONFIG_LOGGING_NAME
+              value: config-logging
+            - name: CONFIG_OBSERVABILITY_NAME
+              value: config-observability
+            - name: METRICS_DOMAIN
+              value: knative.dev/net-gateway-api
+          image: gcr.io/knative-releases/knative.dev/net-gateway-api/cmd/controller@sha256:4bb78651dbf77cdbbc82571e9e48e9ac63dbe02b44bddf731a2b7aed46d2ad83
+          livenessProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /health
+              port: probes
+              scheme: HTTP
+            periodSeconds: 5
+          name: controller
+          ports:
+            - containerPort: 9090
+              name: metrics
+            - containerPort: 8008
+              name: profiling
+            - containerPort: 8080
+              name: probes
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /readiness
+              port: probes
+              scheme: HTTP
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1000Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+      serviceAccountName: controller

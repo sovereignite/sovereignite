@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: spire-server
+  namespace: spire
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: spire-server
+  ports:
+    - name: grpc
+      port: 8081
+      targetPort: grpc
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: spire-server
+  namespace: spire
+spec:
+  serviceName: spire-server
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spire-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: spire-server
+    spec:
+      serviceAccountName: spire-server
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: spire-server
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: spire-server
+          image: ghcr.io/sovereignite/spire-server-tpm:1.15.2-sovereignite.0
+          args:
+            - -config
+            - /run/spire/config/server.conf
+          env:
+            - name: TPM_PKCS11_PIN
+              valueFrom:
+                secretKeyRef:
+                  name: tpm-pkcs11-pin
+                  key: user-pin
+          ports:
+            - name: grpc
+              containerPort: 8081
+          securityContext:
+            privileged: true
+            runAsUser: 0
+            runAsGroup: 0
+          volumeMounts:
+            - name: config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: tpm-attestor-ca
+              mountPath: /run/spire/tpm-attestor-ca
+              readOnly: true
+            - name: data
+              mountPath: /run/spire/data
+            - name: tpm-keymanager-socket
+              mountPath: /run/spire-tpm-keymanager
+            - name: tpmrm
+              mountPath: /dev/tpmrm0
+            - name: tpm2-pkcs11
+              mountPath: /var/lib/sovereignite/tpm2-pkcs11
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: spire-server-config
+        - name: tpm-attestor-ca
+          configMap:
+            name: spire-tpm-attestor-ca
+        - name: tpm-keymanager-socket
+          emptyDir: {}
+        - name: tpmrm
+          hostPath:
+            path: /dev/tpmrm0
+            type: CharDevice
+        - name: tpm2-pkcs11
+          hostPath:
+            path: /var/lib/sovereignite/tpm2-pkcs11
+            type: Directory
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi

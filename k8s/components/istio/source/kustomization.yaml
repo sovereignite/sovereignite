@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: istio-system
+helmCharts:
+  - name: base
+    repo: https://istio-release.storage.googleapis.com/charts
+    version: 1.30.3
+    releaseName: istio-base
+    namespace: istio-system
+    includeCRDs: true
+  - name: istiod
+    repo: https://istio-release.storage.googleapis.com/charts
+    version: 1.30.3
+    releaseName: istiod
+    namespace: istio-system
+    includeCRDs: true
+    valuesInline:
+      meshConfig:
+        accessLogFile: /dev/stdout
+        defaultConfig:
+          holdApplicationUntilProxyStarts: true
+          proxyMetadata:
+            ISTIO_META_CERT_SIGNER: spiffe.io/spire
+        trustDomain: sovereignite.local
+      pilot:
+        env:
+          ENABLE_NATIVE_SIDECARS: "true"
+      global:
+        caAddress: spire-server.spire.svc:8081
+        meshID: sovereignite
+        multiCluster:
+          clusterName: sovereignite
+        proxy:
+          privileged: false
+        sds:
+          token:
+            aud: spire-server

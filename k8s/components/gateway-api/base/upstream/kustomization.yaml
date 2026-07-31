@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - resources/000-customresourcedefinition-cluster-backendtlspolicies.gateway.networking.k8s.io.yaml
+  - resources/001-customresourcedefinition-cluster-gatewayclasses.gateway.networking.k8s.io.yaml
+  - resources/002-customresourcedefinition-cluster-gateways.gateway.networking.k8s.io.yaml
+  - resources/003-customresourcedefinition-cluster-grpcroutes.gateway.networking.k8s.io.yaml
+  - resources/004-customresourcedefinition-cluster-httproutes.gateway.networking.k8s.io.yaml
+  - resources/005-customresourcedefinition-cluster-listenersets.gateway.networking.k8s.io.yaml
+  - resources/006-customresourcedefinition-cluster-referencegrants.gateway.networking.k8s.io.yaml
+  - resources/007-customresourcedefinition-cluster-tcproutes.gateway.networking.k8s.io.yaml
+  - resources/008-customresourcedefinition-cluster-tlsroutes.gateway.networking.k8s.io.yaml
+  - resources/009-customresourcedefinition-cluster-udproutes.gateway.networking.k8s.io.yaml
+  - resources/010-validatingadmissionpolicy-cluster-safe-upgrades.gateway.networking.k8s.io.yaml
+  - resources/011-validatingadmissionpolicybinding-cluster-safe-upgrades.gateway.networking.k8s.io.yaml

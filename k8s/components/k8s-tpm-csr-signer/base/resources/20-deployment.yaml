@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-tpm-csr-signer
+  namespace: sovereignite-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: k8s-tpm-csr-signer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: k8s-tpm-csr-signer
+    spec:
+      serviceAccountName: k8s-tpm-csr-signer
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: controller
+          image: ghcr.io/sovereignite/k8s-tpm-csr-signer:v0.1.0
+          args:
+            - --leader-election-namespace=sovereignite-system
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tpmrm
+              mountPath: /dev/tpmrm0
+            - name: tpm2-pkcs11
+              mountPath: /var/lib/sovereignite/tpm2-pkcs11
+              readOnly: true
+      volumes:
+        - name: tpmrm
+          hostPath:
+            path: /dev/tpmrm0
+            type: CharDevice
+        - name: tpm2-pkcs11
+          hostPath:
+            path: /var/lib/sovereignite/tpm2-pkcs11
+            type: Directory

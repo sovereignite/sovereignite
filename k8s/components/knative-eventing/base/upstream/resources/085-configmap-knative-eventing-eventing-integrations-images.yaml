@@ -1,0 +1,19 @@
+# Source apiVersion: v1
+apiVersion: v1
+data:
+  aws-ddb-streams-source: gcr.io/knative-releases/aws-ddb-streams-source@sha256:8b6e98cfbe00590faa68eed5855307fe9706b8719ec57c2a7610248fc348954a
+  aws-eventbridge-sink: gcr.io/knative-releases/aws-eventbridge-sink@sha256:763954ae8946af146307a3a7152ec27d599ee5475edfa5338eb25826ee083582
+  aws-s3-sink: gcr.io/knative-releases/aws-s3-sink@sha256:5322e981d4e0001d4b74bb122846b08ac3c38d4ff18363294b0c5066854c48f9
+  aws-s3-source: gcr.io/knative-releases/aws-s3-source@sha256:2a1b1860d481f1f2ab1aee03bdfa7e4cbd5d25dddfc490f0e7627013e6cac470
+  aws-sns-sink: gcr.io/knative-releases/aws-sns-sink@sha256:6fb6ad9359172e1a2461851e5f45daf3c96fec0ea2b4bc5097d68701a04b777f
+  aws-sqs-sink: gcr.io/knative-releases/aws-sqs-sink@sha256:3c6e15a8e2c735eb6647ba3141e541c352873383d6992072925e3d01d68031a0
+  aws-sqs-source: gcr.io/knative-releases/aws-sqs-source@sha256:37b11f47f8ec66dc697901028e4b24531e34f7400037e046cebc8369a5cbf882
+  jsonata-transformer: gcr.io/knative-releases/jsonata-transformer@sha256:7469e73837dee196cba275ed69e7eff5366676379be180ed7de52b1917d4ec07
+  log-sink: gcr.io/knative-releases/log-sink@sha256:b88feae0b7b2aed522b3ef9213e5688263c1db3c7cca495578669e0a2b933ad1
+  timer-source: gcr.io/knative-releases/timer-source@sha256:04c01cfd475073732cc84b4c2ea429aead0154197e57fa343ede9557b1b49aee
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/version: v1.22.0
+  name: eventing-integrations-images
+  namespace: knative-eventing

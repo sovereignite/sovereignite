@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-gateway
+  namespace: knative-serving
+data:
+  gateway-class: istio-private
+  gateway-name: knative-private
+  gateway-namespace: knative-serving

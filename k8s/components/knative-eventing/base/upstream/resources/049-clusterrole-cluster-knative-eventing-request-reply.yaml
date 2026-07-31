@@ -1,0 +1,54 @@
+# Source apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: knative-eventing
+    app.kubernetes.io/version: 1.22.2
+  name: knative-eventing-request-reply
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - eventing.knative.dev
+    resources:
+      - requestreplies
+      - requestreplies/status
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - eventing.knative.dev
+    resources:
+      - eventpolicies
+    verbs:
+      - get
+      - list
+      - watch

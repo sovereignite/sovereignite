@@ -1,0 +1,135 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: tpmcsrsignerpolicies.pki.sovereignite.io
+spec:
+  group: pki.sovereignite.io
+  scope: Cluster
+  names:
+    plural: tpmcsrsignerpolicies
+    singular: tpmcsrsignerpolicy
+    kind: TPMCSRSignerPolicy
+    shortNames:
+      - tpmcsr
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      additionalPrinterColumns:
+        - name: Signer
+          type: string
+          jsonPath: .spec.signerName
+        - name: CA
+          type: string
+          jsonPath: .spec.caRef.name
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - signerName
+                - caRef
+                - pkcs11
+                - allowedUsages
+              properties:
+                signerName:
+                  type: string
+                  minLength: 1
+                caRef:
+                  type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                    certificateConfigMapRef:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        key:
+                          type: string
+                          default: ca.crt
+                pkcs11:
+                  type: object
+                  required:
+                    - modulePath
+                    - tokenLabel
+                    - keyLabel
+                  properties:
+                    modulePath:
+                      type: string
+                    tokenLabel:
+                      type: string
+                    keyLabel:
+                      type: string
+                    userPinSecretRef:
+                      type: object
+                      required:
+                        - name
+                        - namespace
+                        - key
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        key:
+                          type: string
+                allowedUsages:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                allowedSubjectRegexes:
+                  type: array
+                  items:
+                    type: string
+                maxDuration:
+                  type: string
+                requireApprovedCondition:
+                  type: boolean
+                  default: true
+            status:
+              type: object
+              properties:
+                observedGeneration:
+                  type: integer
+                  format: int64
+                signedRequests:
+                  type: integer
+                  format: int64
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+      subresources:
+        status: {}

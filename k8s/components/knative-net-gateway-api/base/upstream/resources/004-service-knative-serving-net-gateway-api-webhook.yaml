@@ -1,0 +1,25 @@
+# Source apiVersion: v1
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: net-gateway-api
+    app.kubernetes.io/name: knative-serving
+    app.kubernetes.io/version: 1.22.1
+    networking.knative.dev/ingress-provider: gateway-api
+    role: net-gateway-api-webhook
+  name: net-gateway-api-webhook
+  namespace: knative-serving
+spec:
+  ports:
+    - name: http-metrics
+      port: 9090
+      targetPort: metrics
+    - name: http-profiling
+      port: 8008
+      targetPort: profiling
+    - name: https-webhook
+      port: 443
+      targetPort: https-webhook
+  selector:
+    app: net-gateway-api-webhook

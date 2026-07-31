@@ -1,0 +1,116 @@
+apiVersion: infra.sovereignite.io/v1alpha1
+kind: ClusterInventory
+metadata:
+  name: sovereignite
+spec:
+  versions:
+    kubernetes: v1.36.3
+    flatcar: 4593.2.4
+    calico: v3.32.1
+    gatewayApi: v1.6.1
+    istio: 1.30.3
+    certManager: v1.21.1
+    spire: 1.15.2
+    knativeServing: v1.22.1
+    knativeEventing: v1.22.2
+    knativeNetGatewayApi: v1.22.1
+  cluster:
+    apiVip: 192.168.122.10
+    apiServerPort: 6443
+    apiEndpoint: api.sovereignite.local
+    dnsDomain: cluster.local
+    privateDnsSuffix: sovereignite.local
+    podCidr: 192.168.0.0/16
+    serviceCidr: 10.96.0.0/12
+    trustDomain: sovereignite.local
+  libvirt:
+    uri: qemu:///system
+    pool: sovereignite
+    poolPath: /var/lib/libvirt/images/sovereignite
+    network:
+      mode: bridge
+      bridge: br0
+      cidr: 192.168.122.0/24
+      gateway: 192.168.122.1
+      dns:
+        - 192.168.122.1
+    firmware:
+      ovmfCode: /usr/share/OVMF/OVMF_CODE.secboot.fd
+      ovmfVarsTemplate: /usr/share/OVMF/OVMF_VARS.secboot.fd
+      nvramDir: /var/lib/libvirt/qemu/nvram
+    tpm:
+      backend: emulator
+      version: "2.0"
+      model: tpm-tis
+      stateDir: /var/lib/libvirt/swtpm
+    flatcarImage:
+      url: https://stable.release.flatcar-linux.net/amd64-usr/4593.2.4/flatcar_production_qemu_image.img.bz2
+      decompressedName: flatcar-stable-4593.2.4.qcow2
+  kubeadm:
+    certificateValidity: 8760h
+    caCertificateValidity: 87600h
+    imageRepository: registry.k8s.io
+    criSocket: unix:///run/containerd/containerd.sock
+    externalCA: true
+    uploadCerts: false
+  calico:
+    encapsulation: VXLAN
+    ipip: Never
+    vxlan: Always
+  nodes:
+    - name: cp-1
+      role: control-plane
+      ip: 192.168.122.11
+      mac: 52:54:00:36:10:11
+      vcpu: 2
+      memoryMiB: 4096
+      diskGiB: 256
+    - name: cp-2
+      role: control-plane
+      ip: 192.168.122.12
+      mac: 52:54:00:36:10:12
+      vcpu: 2
+      memoryMiB: 4096
+      diskGiB: 256
+    - name: cp-3
+      role: control-plane
+      ip: 192.168.122.13
+      mac: 52:54:00:36:10:13
+      vcpu: 2
+      memoryMiB: 4096
+      diskGiB: 256
+    - name: worker-1
+      role: worker
+      ip: 192.168.122.21
+      mac: 52:54:00:36:20:21
+      vcpu: 4
+      memoryMiB: 16384
+      diskGiB: 256
+    - name: worker-2
+      role: worker
+      ip: 192.168.122.22
+      mac: 52:54:00:36:20:22
+      vcpu: 4
+      memoryMiB: 16384
+      diskGiB: 256
+    - name: worker-3
+      role: worker
+      ip: 192.168.122.23
+      mac: 52:54:00:36:20:23
+      vcpu: 4
+      memoryMiB: 16384
+      diskGiB: 256
+    - name: worker-4
+      role: worker
+      ip: 192.168.122.24
+      mac: 52:54:00:36:20:24
+      vcpu: 4
+      memoryMiB: 16384
+      diskGiB: 256
+    - name: worker-5
+      role: worker
+      ip: 192.168.122.25
+      mac: 52:54:00:36:20:25
+      vcpu: 4
+      memoryMiB: 16384
+      diskGiB: 256

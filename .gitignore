@@ -53,3 +53,11 @@ flycheck_*.el
 
 .direnv
 
+# local deployment artifacts
+/build/
+/infra/libvirt/build/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
