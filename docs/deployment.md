@@ -9,7 +9,7 @@
 Default cluster settings:
 
 - Kubernetes `v1.36.3`
-- Flatcar Stable `4593.2.4`
+- Fedora CoreOS `44.20260707.3.1`
 - Pod CIDR `192.168.0.0/16`
 - Service CIDR `10.96.0.0/12`
 - Kubernetes DNS domain `cluster.local`
@@ -52,14 +52,17 @@ Override `REGISTRY`, `TAG`, `SPIRE_SERVER_TAG`, or `CONTAINER_TOOL` when using a
 private registry or Podman. Set `PUSH=1` to push the same tags after building.
 The manifest image names default to `ghcr.io/sovereignite/*`.
 
-## 4. Prepare Flatcar VM Inputs
+## 4. Prepare VM Inputs
 
 ```bash
-scripts/fetch-flatcar-image.sh
+scripts/fetch-node-os-artifacts.sh
 SSH_AUTHORIZED_KEY="$(cat ~/.ssh/id_ed25519.pub)" scripts/render-ignition.sh
+scripts/build-node-installer-isos.sh
 ```
 
 Ignition output is written to `infra/libvirt/build/ignition/<node>.ign`.
+Downloaded pristine ISO artifacts and generated per-node installer ISOs are
+written under `infra/libvirt/build/images/<nodeOs.id>/`.
 
 ## 5. Apply Libvirt Infrastructure
 
@@ -73,6 +76,14 @@ tofu apply
 By default the VMs attach to bridge `br0`. Set
 `-var=create_managed_network=true` to create a managed NAT network for local
 testing.
+
+Fresh domains can be started normally after apply. If the configured OVMF vars
+template changes for existing domains, start them once with libvirt's documented
+NVRAM reset so the new vars template is copied into each VM:
+
+```bash
+virsh --connect qemu:///system start <node> --reset-nvram
+```
 
 ## 6. Stage PKI And Bootstrap Kubernetes
 

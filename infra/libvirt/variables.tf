@@ -4,15 +4,8 @@ variable "inventory_path" {
   default     = "cluster.inventory.yaml"
 }
 
-variable "flatcar_image_path" {
-  description = "Path to a decompressed Flatcar qcow2 image. Defaults to build/images/<inventory decompressedName>."
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-variable "flatcar_iso_path" {
-  description = "Path to the Flatcar installer ISO. Defaults to build/images/<inventory installer ISO name>."
+variable "installer_iso_path" {
+  description = "Path to a single OS installer ISO. Defaults to build/images/<nodeOs.id>/<inventory installer ISO name>."
   type        = string
   default     = null
   nullable    = true

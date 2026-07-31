@@ -2,41 +2,4 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-INVENTORY="${INVENTORY:-${ROOT_DIR}/infra/libvirt/cluster.inventory.yaml}"
-OUT_DIR="${OUT_DIR:-${ROOT_DIR}/infra/libvirt/build/images}"
-
-require() {
-  command -v "$1" >/dev/null 2>&1 || {
-    echo "missing required command: $1" >&2
-    exit 127
-  }
-}
-
-require yq
-require curl
-require bunzip2
-
-url="$(yq -r '.spec.libvirt.flatcarImage.url' "${INVENTORY}")"
-name="$(yq -r '.spec.libvirt.flatcarImage.decompressedName' "${INVENTORY}")"
-iso_url="$(yq -r '.spec.libvirt.flatcarInstallerIso.url' "${INVENTORY}")"
-iso_name="$(yq -r '.spec.libvirt.flatcarInstallerIso.name' "${INVENTORY}")"
-archive="${OUT_DIR}/${name}.bz2"
-image="${OUT_DIR}/${name}"
-iso="${OUT_DIR}/${iso_name}"
-
-mkdir -p "${OUT_DIR}"
-
-if [ ! -f "${archive}" ]; then
-  curl -fL --retry 5 --retry-delay 5 -o "${archive}" "${url}"
-fi
-
-if [ ! -f "${image}" ]; then
-  bunzip2 -kc "${archive}" > "${image}"
-fi
-
-if [ ! -f "${iso}" ]; then
-  curl -fL --retry 5 --retry-delay 5 -o "${iso}" "${iso_url}"
-fi
-
-echo "${image}"
-echo "${iso}"
+exec "${ROOT_DIR}/scripts/fetch-node-os-artifacts.sh"

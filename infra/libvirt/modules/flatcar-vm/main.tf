@@ -24,26 +24,17 @@ resource "libvirt_domain" "this" {
   }
 
   os = {
-    firmware     = "efi"
-    type         = "hvm"
-    type_arch    = "x86_64"
-    type_machine = "q35"
-    firmware_info = {
-      features = [
-        {
-          enabled = "yes"
-          name    = "enrolled-keys"
-        },
-        {
-          enabled = "yes"
-          name    = "secure-boot"
-        }
-      ]
+    type            = "hvm"
+    type_arch       = "x86_64"
+    type_machine    = "q35"
+    loader          = var.ovmf_code
+    loader_readonly = "yes"
+    loader_secure   = "yes"
+    loader_type     = "pflash"
+    nv_ram = {
+      nv_ram   = var.nvram_path
+      template = var.ovmf_vars_template
     }
-    boot_devices = [
-      { dev = "cdrom" },
-      { dev = "hd" }
-    ]
   }
 
   features = {
@@ -53,6 +44,20 @@ resource "libvirt_domain" "this" {
       state = "on"
     }
   }
+
+  sys_info = [
+    {
+      fw_cfg = {
+        entry = [
+          {
+            name  = var.ignition_fw_cfg_name
+            file  = var.ignition_path
+            value = ""
+          }
+        ]
+      }
+    }
+  ]
 
   devices = {
     disks = [
@@ -72,6 +77,9 @@ resource "libvirt_domain" "this" {
           dev = "vda"
           bus = "virtio"
         }
+        boot = {
+          order = 1
+        }
       },
       {
         type   = "file"
@@ -89,7 +97,11 @@ resource "libvirt_domain" "this" {
           dev = "sda"
           bus = "sata"
         }
+        boot = {
+          order = 2
+        }
         read_only = true
+        shareable = true
       }
     ]
 

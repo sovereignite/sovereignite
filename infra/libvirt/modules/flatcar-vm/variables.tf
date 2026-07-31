@@ -14,6 +14,14 @@ variable "installer_iso" {
   type = string
 }
 
+variable "ignition_path" {
+  type = string
+}
+
+variable "ignition_fw_cfg_name" {
+  type = string
+}
+
 variable "vcpu" {
   type = number
 }

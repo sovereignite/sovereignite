@@ -1,23 +1,7 @@
-resource "libvirt_volume" "flatcar_base" {
-  name = local.libvirt.flatcarImage.decompressedName
-  pool = local.libvirt.pool
-  type = "file"
+resource "libvirt_volume" "installer_iso" {
+  for_each = local.nodes_by_name
 
-  target = {
-    format = {
-      type = "qcow2"
-    }
-  }
-
-  create = {
-    content = {
-      url = "file://${local.flatcar_image_path}"
-    }
-  }
-}
-
-resource "libvirt_volume" "flatcar_installer_iso" {
-  name = local.libvirt.flatcarInstallerIso.name
+  name = "${each.value.name}-${local.installer_iso_name}"
   pool = local.libvirt.pool
   type = "file"
 
@@ -29,9 +13,16 @@ resource "libvirt_volume" "flatcar_installer_iso" {
 
   create = {
     content = {
-      url = "file://${local.flatcar_iso_path}"
+      url = "file://${local.node_installer_iso_paths[each.key]}"
     }
   }
+}
+
+resource "libvirt_ignition" "node" {
+  for_each = local.nodes_by_name
+
+  name    = "${each.value.name}.ign"
+  content = file("${path.module}/build/ignition/${each.value.name}.ign")
 }
 
 resource "libvirt_network" "managed" {
@@ -101,11 +92,13 @@ module "flatcar_vm" {
 
   for_each = local.nodes_by_name
 
-  name          = each.value.name
-  role          = each.value.role
-  pool          = local.libvirt.pool
-  installer_iso = libvirt_volume.flatcar_installer_iso.path
-  share_path    = abspath("${path.module}/build/shares/${each.value.name}")
+  name                 = each.value.name
+  role                 = each.value.role
+  pool                 = local.libvirt.pool
+  installer_iso        = libvirt_volume.installer_iso[each.key].path
+  ignition_path        = libvirt_ignition.node[each.key].path
+  ignition_fw_cfg_name = local.ignition_fw_cfg_name
+  share_path           = abspath("${path.module}/build/shares/${each.value.name}")
 
   vcpu       = each.value.vcpu
   memory_mib = each.value.memoryMiB

@@ -1,6 +1,6 @@
 # Sovereignite
 
-Secure Flatcar Kubernetes deployment scaffolding for Libvirt/KVM.
+Secure Kubernetes deployment scaffolding for Libvirt/KVM.
 
 This repository uses the Nix flake only as a local development shell. Cluster
 provisioning and Kubernetes deployment are implemented with OpenTofu, Butane,
@@ -8,7 +8,9 @@ plain scripts, and Kustomize overlays.
 
 ## What Is Defined
 
-- 8 Flatcar Stable VMs on Libvirt/KVM: 3 control-plane nodes and 5 workers.
+- 8 Fedora CoreOS VMs on Libvirt/KVM: 3 control-plane nodes and 5 workers.
+- Installer-based OS provisioning with empty provider-owned root disks and
+  per-node customized Fedora CoreOS live ISOs.
 - OVMF Secure Boot and TPM2/vTPM domain XML for every VM.
 - kubeadm HA configuration in external CA mode.
 - Calico, Gateway API, cert-manager, SPIRE, Istio sidecar mode, Knative Serving,
@@ -25,11 +27,12 @@ nix develop
 scripts/materialize-k8s-components.sh
 scripts/verify-repo.sh
 scripts/build-controller-images.sh
-scripts/fetch-flatcar-image.sh
+scripts/fetch-node-os-artifacts.sh
 SSH_AUTHORIZED_KEY="$(cat ~/.ssh/id_ed25519.pub)" scripts/render-ignition.sh
+scripts/build-node-installer-isos.sh
 cd infra/libvirt
 tofu init
-tofu apply
+tofu apply -var=create_managed_network=true
 ```
 
 After the VMs are running, initialize and stage TPM-backed PKI material as

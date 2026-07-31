@@ -6,6 +6,7 @@ spec:
   versions:
     kubernetes: v1.36.3
     flatcar: 4593.2.4
+    fedoraCoreOS: 44.20260707.3.1
     calico: v3.32.1
     gatewayApi: v1.6.1
     istio: 1.30.3
@@ -23,6 +24,29 @@ spec:
     podCidr: 192.168.0.0/16
     serviceCidr: 10.96.0.0/12
     trustDomain: sovereignite.local
+  nodeOs:
+    id: fedora-coreos
+    name: Fedora CoreOS
+    stream: stable
+    release: 44.20260707.3.1
+    architecture: x86_64
+    butane:
+      variant: fcos
+      version: 1.7.0
+    ignition:
+      fwCfgName: opt/com.coreos/config
+    installer:
+      customize: true
+      destDevice: /dev/vda
+    artifacts:
+      installerIso:
+        url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/44.20260707.3.1/x86_64/fedora-coreos-44.20260707.3.1-live-iso.x86_64.iso
+        name: fedora-coreos-44.20260707.3.1-live-iso.x86_64.iso
+        sha256: 8ffd0d0fc218eae95c578ec12839fe598d60f96de85fab63d424ad021ed1a62f
+      qemuImage:
+        url: https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/44.20260707.3.1/x86_64/fedora-coreos-44.20260707.3.1-qemu.x86_64.qcow2.xz
+        name: fedora-coreos-44.20260707.3.1-qemu.x86_64.qcow2.xz
+        sha256: 35eb8e1f601b2b65545402df54b2dbb2a48e75f1d4483de5dc575d020ddefa1e
   libvirt:
     uri: qemu:///system
     pool: default
@@ -35,8 +59,8 @@ spec:
       dns:
         - 10.10.10.1
     firmware:
-      ovmfCode: /nix/store/8q4hiprv3kkvhqwji33z4k59hkbk1y4c-OVMF-202411-fd/FV/OVMF_CODE.fd
-      ovmfVarsTemplate: /nix/store/8q4hiprv3kkvhqwji33z4k59hkbk1y4c-OVMF-202411-fd/FV/OVMF_VARS.ms.fd
+      ovmfCode: /nix/store/zz94h2b37kkwygdm5cfxnwhjx2mwpi0w-OVMF-202411-fd/FV/OVMF_CODE.fd
+      ovmfVarsTemplate: /nix/store/zz94h2b37kkwygdm5cfxnwhjx2mwpi0w-OVMF-202411-fd/FV/OVMF_VARS.ms.fd
       nvramDir: /var/lib/libvirt/qemu/nvram
     tpm:
       backend: emulator

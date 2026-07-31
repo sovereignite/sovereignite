@@ -1,5 +1,5 @@
-variant: flatcar
-version: 1.0.0
+variant: ${BUTANE_VARIANT}
+version: ${BUTANE_VERSION}
 
 passwd:
   users:
@@ -150,7 +150,7 @@ storage:
 systemd:
   units:
     - name: systemd-networkd.service
-      enabled: true
+      enabled: ${NETWORKD_ENABLED}
     - name: sshd.service
       enabled: true
     - name: containerd.service

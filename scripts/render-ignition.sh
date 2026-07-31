@@ -40,6 +40,12 @@ mkdir -p "${OUT_DIR}" "${SHARE_DIR}"
 
 cluster_name="$(yq -r '.metadata.name' "${INVENTORY}")"
 kubernetes_version="$(yq -r '.spec.versions.kubernetes' "${INVENTORY}")"
+butane_variant="$(yq -r '.spec.nodeOs.butane.variant // "flatcar"' "${INVENTORY}")"
+butane_version="$(yq -r '.spec.nodeOs.butane.version // "1.0.0"' "${INVENTORY}")"
+networkd_enabled="false"
+if [ "${butane_variant}" = "flatcar" ]; then
+  networkd_enabled="true"
+fi
 api_endpoint="$(yq -r '.spec.cluster.apiEndpoint' "${INVENTORY}")"
 api_vip="$(yq -r '.spec.cluster.apiVip' "${INVENTORY}")"
 api_port="$(yq -r '.spec.cluster.apiServerPort' "${INVENTORY}")"
@@ -64,6 +70,9 @@ trap 'rm -f "${hosts_file}" "${networkd_file:-}" "${node_env_file:-}" "${contain
 HOSTS_B64="$(base64 -w0 "${hosts_file}")"
 export SSH_AUTHORIZED_KEY SSH_AUTHORIZED_KEYS_B64 HOSTS_B64
 export KUBERNETES_VERSION="${kubernetes_version}"
+export BUTANE_VARIANT="${butane_variant}"
+export BUTANE_VERSION="${butane_version}"
+export NETWORKD_ENABLED="${networkd_enabled}"
 
 mapfile -t node_names < <(yq -r '.spec.nodes[].name' "${INVENTORY}")
 
@@ -101,15 +110,18 @@ API_SERVER_PORT=${api_port}
 EOF_NODE_ENV
 
   cat > "${containerd_file}" <<EOF_CONTAINERD
-version = 2
+version = 3
 
-[plugins."io.containerd.grpc.v1.cri"]
-  sandbox_image = "registry.k8s.io/pause:3.10"
+[plugins."io.containerd.cri.v1.images".pinned_images]
+  sandbox = "registry.k8s.io/pause:3.10"
 
-[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+[plugins."io.containerd.cri.v1.runtime".containerd]
+  default_runtime_name = "runc"
+
+[plugins."io.containerd.cri.v1.runtime".containerd.runtimes.runc]
   runtime_type = "io.containerd.runc.v2"
 
-[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+[plugins."io.containerd.cri.v1.runtime".containerd.runtimes.runc.options]
   SystemdCgroup = true
 EOF_CONTAINERD
 
@@ -186,7 +198,7 @@ EOF_KUBEADM
   KUBEADM_CONFIG_B64="$(base64 -w0 "${kubeadm_file}")"
   export NODE_NAME ROLE NODE_IP NETWORKD_B64 NODE_ENV_B64 CONTAINERD_CONFIG_B64 KUBEADM_CONFIG_B64
 
-  envsubst '${SSH_AUTHORIZED_KEY} ${SSH_AUTHORIZED_KEYS_B64} ${HOSTS_B64} ${KUBERNETES_VERSION} ${NODE_NAME} ${ROLE} ${NODE_IP} ${NETWORKD_B64} ${NODE_ENV_B64} ${CONTAINERD_CONFIG_B64} ${KUBEADM_CONFIG_B64}' \
+  envsubst '${BUTANE_VARIANT} ${BUTANE_VERSION} ${NETWORKD_ENABLED} ${SSH_AUTHORIZED_KEY} ${SSH_AUTHORIZED_KEYS_B64} ${HOSTS_B64} ${KUBERNETES_VERSION} ${NODE_NAME} ${ROLE} ${NODE_IP} ${NETWORKD_B64} ${NODE_ENV_B64} ${CONTAINERD_CONFIG_B64} ${KUBEADM_CONFIG_B64}' \
     < "${TEMPLATE}" > "${butane_file}"
 
   ignition_file="${OUT_DIR}/${NODE_NAME}.ign"
