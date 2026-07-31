@@ -1,0 +1,35 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cert-manager-controller-approve:pki-sovereignite-io
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: cert-manager
+rules:
+  - apiGroups:
+      - cert-manager.io
+    resources:
+      - signers
+    verbs:
+      - approve
+    resourceNames:
+      - tpmclusterissuers.pki.sovereignite.io/cert-manager-local-ca
+      - tpmclusterissuers.pki.sovereignite.io/spire-upstream-ca
+      - tpmclusterissuers.pki.sovereignite.io/spire-tpm-devid-ca
+      - tpmclusterissuers.pki.sovereignite.io/spire-tpm-endorsement-ca
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cert-manager-controller-approve:pki-sovereignite-io
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: cert-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cert-manager-controller-approve:pki-sovereignite-io
+subjects:
+  - kind: ServiceAccount
+    name: cert-manager
+    namespace: cert-manager

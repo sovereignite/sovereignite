@@ -21,3 +21,19 @@ metadata:
   namespace: sovereignite-system
 data:
   ca.crt: ""
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-tpm-devid-ca
+  namespace: sovereignite-system
+data:
+  ca.crt: ""
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-tpm-endorsement-ca
+  namespace: sovereignite-system
+data:
+  ca.crt: ""

@@ -31,6 +31,8 @@ apply_configmap() {
 apply_configmap kubernetes-ca "${PKI_ROOT}/kubernetes/ca.crt"
 apply_configmap cert-manager-local-ca "${PKI_ROOT}/cert-manager/ca.crt"
 apply_configmap spire-upstream-ca "${PKI_ROOT}/spire/upstream-ca.crt"
+apply_configmap spire-tpm-devid-ca "${PKI_ROOT}/spire/tpm-devid-ca.crt"
+apply_configmap spire-tpm-endorsement-ca "${PKI_ROOT}/spire/tpm-endorsement-ca.crt"
 
 if [ ! -f "${PKI_ROOT}/spire/tpm-devid-ca.crt" ]; then
   echo "missing CA certificate for spire-tpm-attestor-ca: ${PKI_ROOT}/spire/tpm-devid-ca.crt" >&2

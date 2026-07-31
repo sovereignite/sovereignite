@@ -13,9 +13,13 @@ certificate profiles, and rotation windows.
 - kube-controller-manager runs without the built-in CSR signing controller.
 - kubelet client and serving CSR rotation is handled by
   `k8s-tpm-csr-signer`.
-- cert-manager uses `TPMClusterIssuer`, not the built-in CA issuer with a
-  private-key Secret.
+- cert-manager is the lifecycle and request-flow surface for Kubernetes
+  `Certificate` resources.
+- Non-control-plane CAs are represented as `TPMClusterIssuer` authorities, not
+  built-in CA issuers with private-key Secrets.
 - SPIRE server CA signing uses the external TPM KeyManager plugin.
+
+See `docs/cert-manager-authorities.md` for the cert-manager authority wiring.
 
 ## Expected Output Layout
 

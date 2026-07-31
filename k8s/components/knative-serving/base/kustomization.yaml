@@ -5,3 +5,4 @@ resources:
 patches:
   - path: resources/20-config-domain.yaml
   - path: resources/21-config-network.yaml
+  - path: resources/22-config-certmanager.yaml

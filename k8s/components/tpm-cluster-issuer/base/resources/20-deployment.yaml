@@ -24,22 +24,18 @@ spec:
       containers:
         - name: controller
           image: ghcr.io/sovereignite/tpm-cluster-issuer:v0.1.0
-          command:
-            - /bin/sh
-            - -ceu
-            - |
-              . /var/lib/sovereignite/tpm2-pkcs11/pins.env
-              export TPM2_PKCS11_STORE=/var/lib/sovereignite/tpm2-pkcs11
-              export TPM2TOOLS_TCTI=device:/dev/tpmrm0
-              export TSS2_TCTI=device:/dev/tpmrm0
-              export TPM2_PKCS11_USER_PIN
-              exec /usr/local/bin/tpm-cluster-issuer "$@"
-            - --
           args:
             - --issuer-group=pki.sovereignite.io
             - --issuer-kind=TPMClusterIssuer
             - --leader-election-namespace=sovereignite-system
             - --default-profile=default
+          env:
+            - name: TPM2_PKCS11_STORE
+              value: /var/lib/sovereignite/tpm2-pkcs11
+            - name: TPM2TOOLS_TCTI
+              value: device:/dev/tpmrm0
+            - name: TSS2_TCTI
+              value: device:/dev/tpmrm0
           securityContext:
             runAsUser: 0
             runAsGroup: 0

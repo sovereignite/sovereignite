@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - upstream
   - resources/20-tpm-cluster-issuer.yaml
+  - resources/21-tpm-cluster-issuer-approval-rbac.yaml

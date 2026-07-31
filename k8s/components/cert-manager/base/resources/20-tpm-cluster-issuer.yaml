@@ -1,16 +1,19 @@
 apiVersion: pki.sovereignite.io/v1alpha1
 kind: TPMClusterIssuer
 metadata:
-  name: sovereignite-local
+  name: cert-manager-local-ca
 spec:
-  signerName: sovereignite.local/cert-manager
+  signerName: tpmclusterissuers.pki.sovereignite.io/cert-manager-local-ca
   caRef:
     name: cert-manager-local-ca
   pkcs11:
     modulePath: /usr/lib64/pkcs11/libtpm2_pkcs11.so
     tokenLabel: sovereignite-ca
     keyLabel: sovereignite-cert-manager-ca
-    userPinEnv: TPM2_PKCS11_USER_PIN
+    userPinSecretRef:
+      name: tpm2-pkcs11-pin
+      namespace: sovereignite-system
+      key: user-pin
   profiles:
     default:
       maxDuration: 2160h
@@ -19,3 +22,90 @@ spec:
         - key encipherment
         - server auth
         - client auth
+  requestPolicy:
+    requireApprovedCondition: true
+    denyCARequests: true
+---
+apiVersion: pki.sovereignite.io/v1alpha1
+kind: TPMClusterIssuer
+metadata:
+  name: spire-upstream-ca
+spec:
+  signerName: tpmclusterissuers.pki.sovereignite.io/spire-upstream-ca
+  caRef:
+    name: spire-upstream-ca
+  pkcs11:
+    modulePath: /usr/lib64/pkcs11/libtpm2_pkcs11.so
+    tokenLabel: sovereignite-ca
+    keyLabel: sovereignite-spire-upstream-ca
+    userPinSecretRef:
+      name: tpm2-pkcs11-pin
+      namespace: sovereignite-system
+      key: user-pin
+  profiles:
+    default:
+      maxDuration: 2160h
+      usages:
+        - digital signature
+        - key encipherment
+        - server auth
+        - client auth
+  requestPolicy:
+    requireApprovedCondition: true
+    denyCARequests: true
+---
+apiVersion: pki.sovereignite.io/v1alpha1
+kind: TPMClusterIssuer
+metadata:
+  name: spire-tpm-devid-ca
+spec:
+  signerName: tpmclusterissuers.pki.sovereignite.io/spire-tpm-devid-ca
+  caRef:
+    name: spire-tpm-devid-ca
+  pkcs11:
+    modulePath: /usr/lib64/pkcs11/libtpm2_pkcs11.so
+    tokenLabel: sovereignite-ca
+    keyLabel: sovereignite-spire-tpm-devid-ca
+    userPinSecretRef:
+      name: tpm2-pkcs11-pin
+      namespace: sovereignite-system
+      key: user-pin
+  profiles:
+    default:
+      maxDuration: 2160h
+      usages:
+        - digital signature
+        - key encipherment
+        - server auth
+        - client auth
+  requestPolicy:
+    requireApprovedCondition: true
+    denyCARequests: true
+---
+apiVersion: pki.sovereignite.io/v1alpha1
+kind: TPMClusterIssuer
+metadata:
+  name: spire-tpm-endorsement-ca
+spec:
+  signerName: tpmclusterissuers.pki.sovereignite.io/spire-tpm-endorsement-ca
+  caRef:
+    name: spire-tpm-endorsement-ca
+  pkcs11:
+    modulePath: /usr/lib64/pkcs11/libtpm2_pkcs11.so
+    tokenLabel: sovereignite-ca
+    keyLabel: sovereignite-spire-tpm-endorsement-ca
+    userPinSecretRef:
+      name: tpm2-pkcs11-pin
+      namespace: sovereignite-system
+      key: user-pin
+  profiles:
+    default:
+      maxDuration: 2160h
+      usages:
+        - digital signature
+        - key encipherment
+        - server auth
+        - client auth
+  requestPolicy:
+    requireApprovedCondition: true
+    denyCARequests: true

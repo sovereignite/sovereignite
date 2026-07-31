@@ -14,6 +14,9 @@ Purpose:
 - Watches cert-manager `CertificateRequest` resources that reference
   `issuerRef.group: pki.sovereignite.io` and
   `issuerRef.kind: TPMClusterIssuer`.
+- Keeps cert-manager in charge of `Certificate` lifecycle, renewal, approval,
+  and target Secret writes while the controller performs only TPM-backed
+  signing.
 - Validates requested usages, DNS names, SPIFFE URIs, duration, and approval
   condition.
 - Signs with a TPM-resident CA key through PKCS#11.

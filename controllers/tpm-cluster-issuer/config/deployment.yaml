@@ -28,6 +28,13 @@ spec:
             - --issuer-kind=TPMClusterIssuer
             - --leader-election-namespace=sovereignite-system
             - --default-profile=default
+          env:
+            - name: TPM2_PKCS11_STORE
+              value: /var/lib/sovereignite/tpm2-pkcs11
+            - name: TPM2TOOLS_TCTI
+              value: device:/dev/tpmrm0
+            - name: TSS2_TCTI
+              value: device:/dev/tpmrm0
           securityContext:
             runAsUser: 0
             runAsGroup: 0

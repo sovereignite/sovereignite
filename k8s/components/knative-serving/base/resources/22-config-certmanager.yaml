@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-certmanager
+  namespace: knative-serving
+data:
+  issuerRef: |
+    group: pki.sovereignite.io
+    kind: TPMClusterIssuer
+    name: cert-manager-local-ca
+  clusterLocalIssuerRef: |
+    group: pki.sovereignite.io
+    kind: TPMClusterIssuer
+    name: cert-manager-local-ca
+  systemInternalIssuerRef: |
+    group: pki.sovereignite.io
+    kind: TPMClusterIssuer
+    name: cert-manager-local-ca
