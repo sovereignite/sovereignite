@@ -23,7 +23,7 @@ resource "libvirt_volume" "flatcar_installer_iso" {
 
   target = {
     format = {
-      type = "raw"
+      type = "iso"
     }
   }
 
