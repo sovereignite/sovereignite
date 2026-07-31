@@ -18,11 +18,6 @@ resource "libvirt_volume" "root" {
   }
 }
 
-resource "libvirt_ignition" "this" {
-  name    = "${var.name}.ign"
-  content = var.ignition_content
-}
-
 resource "libvirt_domain" "this" {
   name        = var.name
   type        = "kvm"
@@ -36,17 +31,21 @@ resource "libvirt_domain" "this" {
   }
 
   os = {
-    firmware        = "efi"
-    type            = "hvm"
-    type_arch       = "x86_64"
-    type_machine    = "q35"
-    loader          = var.ovmf_code
-    loader_readonly = "yes"
-    loader_secure   = "yes"
-    loader_type     = "pflash"
-    nv_ram = {
-      nv_ram   = var.nvram_path
-      template = var.ovmf_vars_template
+    firmware     = "efi"
+    type         = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+    firmware_info = {
+      features = [
+        {
+          enabled = "yes"
+          name    = "enrolled-keys"
+        },
+        {
+          enabled = "yes"
+          name    = "secure-boot"
+        }
+      ]
     }
     boot_devices = [
       { dev = "hd" }
@@ -103,6 +102,72 @@ resource "libvirt_domain" "this" {
       }
     ]
 
+    filesystems = [
+      {
+        access_mode = "passthrough"
+        driver = {
+          type = "path"
+        }
+        source = {
+          mount = {
+            dir = var.share_path
+          }
+        }
+        target = {
+          dir = "sovereignite"
+        }
+        model     = "virtio"
+        read_only = true
+      }
+    ]
+
+    graphics = [
+      {
+        spice = {
+          auto_port = true
+          listen    = "127.0.0.1"
+          listeners = [
+            {
+              address = {
+                address = "127.0.0.1"
+              }
+            }
+          ]
+        }
+      }
+    ]
+
+    videos = [
+      {
+        model = {
+          type    = "virtio"
+          heads   = 1
+          primary = "yes"
+        }
+      }
+    ]
+
+    serials = [
+      {
+        target = {
+          type = "isa-serial"
+          port = 0
+          model = {
+            name = "isa-serial"
+          }
+        }
+      }
+    ]
+
+    consoles = [
+      {
+        target = {
+          type = "serial"
+          port = 0
+        }
+      }
+    ]
+
     tpms = [
       {
         model = var.tpm_model
@@ -124,10 +189,4 @@ resource "libvirt_domain" "this" {
     ]
   }
 
-  qemu_commandline = {
-    args = [
-      { value = "-fw_cfg" },
-      { value = "name=opt/com.coreos/config,file=${libvirt_ignition.this.path}" }
-    ]
-  }
 }

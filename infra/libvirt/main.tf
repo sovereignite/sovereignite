@@ -1,15 +1,6 @@
-resource "libvirt_pool" "cluster" {
-  name = local.libvirt.pool
-  type = "dir"
-
-  target = {
-    path = local.libvirt.poolPath
-  }
-}
-
 resource "libvirt_volume" "flatcar_base" {
   name = local.libvirt.flatcarImage.decompressedName
-  pool = libvirt_pool.cluster.name
+  pool = local.libvirt.pool
   type = "file"
 
   target = {
@@ -94,9 +85,9 @@ module "flatcar_vm" {
 
   name             = each.value.name
   role             = each.value.role
-  pool             = libvirt_pool.cluster.name
+  pool             = local.libvirt.pool
   base_volume_path = libvirt_volume.flatcar_base.path
-  ignition_content = file(abspath("${path.module}/build/ignition/${each.value.name}.ign"))
+  share_path       = abspath("${path.module}/build/shares/${each.value.name}")
 
   vcpu       = each.value.vcpu
   memory_mib = each.value.memoryMiB

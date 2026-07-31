@@ -9,6 +9,12 @@ passwd:
 
 storage:
   directories:
+    - path: /home/core/.ssh
+      mode: 448
+      user:
+        name: core
+      group:
+        name: core
     - path: /opt/sovereignite/pki/kubernetes
       mode: 448
     - path: /var/lib/sovereignite/tpm
@@ -18,24 +24,29 @@ storage:
   files:
     - path: /etc/hostname
       mode: 420
+      overwrite: true
       contents:
         inline: ${NODE_NAME}
     - path: /etc/hosts
       mode: 420
+      overwrite: true
       contents:
         source: data:text/plain;charset=utf-8;base64,${HOSTS_B64}
     - path: /etc/systemd/network/10-sovereignite.network
       mode: 420
+      overwrite: true
       contents:
         source: data:text/plain;charset=utf-8;base64,${NETWORKD_B64}
     - path: /etc/modules-load.d/99-kubernetes.conf
       mode: 420
+      overwrite: true
       contents:
         inline: |
           br_netfilter
           overlay
     - path: /etc/sysctl.d/99-kubernetes.conf
       mode: 420
+      overwrite: true
       contents:
         inline: |
           net.bridge.bridge-nf-call-iptables = 1
@@ -43,25 +54,39 @@ storage:
           net.ipv4.ip_forward = 1
     - path: /etc/ssh/sshd_config.d/40-sovereignite-lockdown.conf
       mode: 420
+      overwrite: true
       contents:
         inline: |
           PasswordAuthentication no
           PermitRootLogin no
           KbdInteractiveAuthentication no
+    - path: /home/core/.ssh/authorized_keys
+      mode: 384
+      overwrite: true
+      user:
+        name: core
+      group:
+        name: core
+      contents:
+        source: data:text/plain;charset=utf-8;base64,${SSH_AUTHORIZED_KEYS_B64}
     - path: /etc/sovereignite/node.env
       mode: 420
+      overwrite: true
       contents:
         source: data:text/plain;charset=utf-8;base64,${NODE_ENV_B64}
     - path: /etc/containerd/config.toml
       mode: 420
+      overwrite: true
       contents:
         source: data:text/plain;charset=utf-8;base64,${CONTAINERD_CONFIG_B64}
     - path: /etc/kubernetes/kubeadm.yaml
       mode: 420
+      overwrite: true
       contents:
         source: data:text/plain;charset=utf-8;base64,${KUBEADM_CONFIG_B64}
     - path: /opt/sovereignite/bin/bootstrap-node.sh
       mode: 493
+      overwrite: true
       contents:
         inline: |
           #!/usr/bin/env bash
@@ -78,6 +103,18 @@ storage:
             fi
           }
 
+          ensure_api_vip() {
+            if [ "${NODE_NAME}" != "cp-1" ]; then
+              return 0
+            fi
+
+            dev="$(ip -o -4 addr show | awk -v ip="${NODE_IP}" '$4 ~ "^" ip "/" {print $2; exit}')"
+            test -n "${dev}"
+            if ! ip -4 addr show dev "${dev}" | grep -q "${API_VIP}/"; then
+              ip addr add "${API_VIP}/24" dev "${dev}"
+            fi
+          }
+
           assert_platform() {
             test -e /dev/tpmrm0 -o -e /dev/tpm0
             secure_boot_var="$(find /sys/firmware/efi/efivars -name 'SecureBoot-*' -print -quit)"
@@ -88,6 +125,7 @@ storage:
 
           install_public_pki
           assert_platform
+          ensure_api_vip
 
           case "${1:-check}" in
             check)
@@ -123,12 +161,13 @@ systemd:
         [Unit]
         Description=Install pinned Kubernetes node binaries
         After=network-online.target
-        Wants=network-online.target
+        Wants=network-online.target containerd.service
+        Requires=containerd.service
         ConditionPathExists=!/opt/bin/kubeadm
 
         [Service]
         Type=oneshot
-        ExecStart=/usr/bin/bash -euxo pipefail -c 'mkdir -p /opt/bin /etc/systemd/system/kubelet.service.d; for bin in kubeadm kubelet kubectl; do curl -fsSL --retry 5 --retry-delay 3 -o /opt/bin/${bin} https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/amd64/${bin}; chmod 0755 /opt/bin/${bin}; done'
+        ExecStart=/usr/bin/bash -euxo pipefail -c 'mkdir -p /opt/bin /etc/systemd/system/kubelet.service.d; for bin in kubeadm kubelet kubectl; do curl -fsSL --retry 5 --retry-delay 3 -o /opt/bin/$${bin} https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/amd64/$${bin}; chmod 0755 /opt/bin/$${bin}; done'
         RemainAfterExit=yes
 
         [Install]
@@ -155,7 +194,9 @@ systemd:
       contents: |
         [Unit]
         Description=Verify Secure Boot and TPM before Kubernetes bootstrap
-        After=local-fs.target
+        After=local-fs.target containerd.service install-kubernetes-tools.service network-online.target
+        Wants=network-online.target
+        Requires=containerd.service install-kubernetes-tools.service
         Before=kubelet.service
 
         [Service]

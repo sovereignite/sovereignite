@@ -14,10 +14,6 @@ variable "base_volume_path" {
   type = string
 }
 
-variable "ignition_content" {
-  type = string
-}
-
 variable "vcpu" {
   type = number
 }
@@ -35,6 +31,10 @@ variable "mac" {
 }
 
 variable "bridge" {
+  type = string
+}
+
+variable "share_path" {
   type = string
 }
 
