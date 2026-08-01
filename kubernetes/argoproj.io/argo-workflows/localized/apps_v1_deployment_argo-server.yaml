@@ -15,6 +15,7 @@ spec:
       containers:
       - args:
         - server
+        - --namespaced
         - --secure=false
         env: []
         image: quay.io/argoproj/argocli:v4.0.8

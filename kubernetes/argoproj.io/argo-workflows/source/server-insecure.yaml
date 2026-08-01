@@ -9,6 +9,7 @@ spec:
       - name: argo-server
         args:
         - server
+        - --namespaced
         - --secure=false
         readinessProbe:
           httpGet:
