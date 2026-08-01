@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- apiextensions.k8s.io_v1_customresourcedefinition_eventbus.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_eventsources.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_sensors.argoproj.io.yaml
+- apps_v1_deployment_controller-manager.yaml
+- rbac.authorization.k8s.io_v1_role_argo-events-role.yaml
+- rbac.authorization.k8s.io_v1_rolebinding_argo-events-role-binding.yaml
+- v1_configmap_argo-events-controller-config.yaml
+- v1_namespace_argo-events.yaml
+- v1_serviceaccount_argo-events-sa.yaml

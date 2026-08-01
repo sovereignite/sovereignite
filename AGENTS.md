@@ -1,9 +1,6 @@
 # Startup
 
-Document research and general knowledge under `docs`.
+Use `ZETTELKASTEN.md` to record accepted project knowledge as Zettelkasten
+notes. Do not use it as documentation, a plan, or a policy dump.
 
-Use `docs/ZETTELKASTEN.md` as the active convention list.
-
-For Kubernetes and Kustomize work, follow `docs/ZETTELKASTEN.md` directly.
-Do not introduce structures, scripts, documentation, labels, or terminology
-outside those recorded conventions. Remove them when encountered.
+Source: https://zettelkasten.de/introduction/

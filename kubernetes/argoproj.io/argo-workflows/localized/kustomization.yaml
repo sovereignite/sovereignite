@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- apiextensions.k8s.io_v1_customresourcedefinition_clusterworkflowtemplates.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_cronworkflows.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_workflowartifactgctasks.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_workfloweventbindings.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_workflows.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_workflowtaskresults.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_workflowtasksets.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_workflowtemplates.argoproj.io.yaml
+- apps_v1_deployment_argo-server.yaml
+- apps_v1_deployment_workflow-controller.yaml
+- rbac.authorization.k8s.io_v1_role_argo-role.yaml
+- rbac.authorization.k8s.io_v1_role_argo-server-role.yaml
+- rbac.authorization.k8s.io_v1_rolebinding_argo-binding.yaml
+- rbac.authorization.k8s.io_v1_rolebinding_argo-server-binding.yaml
+- scheduling.k8s.io_v1_priorityclass_workflow-controller.yaml
+- v1_configmap_workflow-controller-configmap.yaml
+- v1_namespace_argo.yaml
+- v1_service_argo-server.yaml
+- v1_serviceaccount_argo-server.yaml
+- v1_serviceaccount_argo.yaml

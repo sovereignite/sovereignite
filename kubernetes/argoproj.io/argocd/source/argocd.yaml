@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1beta1
+kind: ArgoCD
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  version: v3.4.6
+  oidcConfig: |
+    name: Dex
+    issuer: https://dex.dex.svc.cluster.local
+    clientID: argocd
+    clientSecret: argocd-dex-secret
+    requestedScopes:
+      - openid
+      - profile
+      - email
+      - groups
+    requestedIDTokenClaims:
+      groups:
+        essential: true
+    insecureSkipVerify: true
+  rbac:
+    defaultPolicy: role:readonly
+    policy: |
+      g, platform-admins, role:admin
+      g, observability-admins, role:readonly
+    scopes: '[groups, email]'
+  server:
+    insecure: true

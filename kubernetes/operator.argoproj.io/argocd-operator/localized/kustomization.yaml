@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- apiextensions.k8s.io_v1_customresourcedefinition_applications.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_applicationsets.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_appprojects.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_argocdexports.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_argocds.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_imageupdaters.argocd-image-updater.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_namespacemanagements.argoproj.io.yaml
+- apiextensions.k8s.io_v1_customresourcedefinition_notificationsconfigurations.argoproj.io.yaml
+- apps_v1_deployment_argocd-operator-controller-manager.yaml
+- rbac.authorization.k8s.io_v1_clusterrole_argocd-operator-manager-role.yaml
+- rbac.authorization.k8s.io_v1_clusterrole_argocd-operator-metrics-reader.yaml
+- rbac.authorization.k8s.io_v1_clusterrole_argocd-operator-namespacemanagement-editor-role.yaml
+- rbac.authorization.k8s.io_v1_clusterrole_argocd-operator-namespacemanagement-viewer-role.yaml
+- rbac.authorization.k8s.io_v1_clusterrole_argocd-operator-proxy-role.yaml
+- rbac.authorization.k8s.io_v1_clusterrolebinding_argocd-operator-manager-rolebinding.yaml
+- rbac.authorization.k8s.io_v1_clusterrolebinding_argocd-operator-proxy-rolebinding.yaml
+- rbac.authorization.k8s.io_v1_role_argocd-operator-leader-election-role.yaml
+- rbac.authorization.k8s.io_v1_rolebinding_argocd-operator-leader-election-rolebinding.yaml
+- v1_configmap_argocd-operator-manager-config.yaml
+- v1_namespace_argocd-operator-system.yaml
+- v1_service_argocd-operator-controller-manager-metrics-service.yaml
+- v1_service_argocd-operator-webhook-service.yaml
+- v1_serviceaccount_argocd-operator-controller-manager.yaml

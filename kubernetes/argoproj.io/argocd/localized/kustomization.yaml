@@ -1,0 +1,5 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- argoproj.io_v1beta1_argocd_argocd.yaml
+- v1_namespace_argocd.yaml
