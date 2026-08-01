@@ -3,14 +3,15 @@ locals {
   inventory      = yamldecode(file(local.inventory_file))
   spec           = local.inventory.spec
 
-  name     = local.inventory.metadata.name
-  versions = local.spec.versions
-  cluster  = local.spec.cluster
-  node_os  = try(local.spec.nodeOs, null)
-  libvirt  = local.spec.libvirt
-  network  = local.libvirt.network
-  firmware = local.libvirt.firmware
-  tpm      = local.libvirt.tpm
+  name          = local.inventory.metadata.name
+  versions      = local.spec.versions
+  cluster       = local.spec.cluster
+  node_os       = try(local.spec.nodeOs, null)
+  libvirt       = local.spec.libvirt
+  network       = local.libvirt.network
+  firmware      = local.libvirt.firmware
+  tpm           = local.libvirt.tpm
+  tpm_state_dir = startswith(local.tpm.stateDir, "/") ? local.tpm.stateDir : abspath("${path.module}/${local.tpm.stateDir}")
 
   nodes_by_name       = { for node in local.spec.nodes : node.name => node }
   control_plane_nodes = [for node in local.spec.nodes : node if node.role == "control-plane"]

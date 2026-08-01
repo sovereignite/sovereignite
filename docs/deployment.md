@@ -67,11 +67,18 @@ The manifest image names default to `ghcr.io/sovereignite/*`.
 scripts/fetch-node-os-artifacts.sh
 SSH_AUTHORIZED_KEY="$(cat ~/.ssh/id_ed25519.pub)" scripts/render-ignition.sh
 scripts/build-node-installer-isos.sh
+scripts/manufacture-swtpm-states.sh
 ```
 
 Ignition output is written to `infra/libvirt/build/ignition/<node>.ign`.
 Downloaded pristine ISO artifacts and generated per-node installer ISOs are
 written under `infra/libvirt/build/images/<nodeOs.id>/`.
+
+`scripts/manufacture-swtpm-states.sh` creates disposable libvirt vTPM state
+under the inventory `spec.libvirt.tpm.stateDir` and writes the swtpm
+manufacturer CA bundle under `infra/libvirt/build/swtpm/ca-bundle.pem`. SPIRE's
+TPM DevID attestor uses that public manufacturer bundle to verify vTPM EK
+certificates.
 
 ## 5. Apply Libvirt Infrastructure
 
@@ -124,6 +131,9 @@ state. `scripts/bootstrap-kubeadm.sh` applies the local overlay and then calls
 `tpm2-pkcs11-pin` Secrets in `sovereignite-system` and `spire`, and to load the
 root plus subordinate public CA ConfigMaps consumed by the TPM-backed issuers.
 The Secret contains token PINs only; CA private keys remain TPM-resident.
+For SPIRE TPM DevID node attestation, the script also builds
+`build/pki/spire/tpm-endorsement-trust-bundle.crt` from the project endorsement
+CA plus `infra/libvirt/build/swtpm/ca-bundle.pem` when present.
 
 ## 7. Verify
 

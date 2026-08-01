@@ -4,6 +4,15 @@ metadata:
   name: config-gateway
   namespace: knative-serving
 data:
-  gateway-class: istio-private
-  gateway-name: knative-private
-  gateway-namespace: knative-serving
+  external-gateways: |
+    - class: istio-private
+      gateway: knative-serving/knative-private
+      service: knative-serving/knative-private-istio-private
+      supported-features:
+      - HTTPRouteRequestTimeout
+  local-gateways: |
+    - class: istio-private
+      gateway: knative-serving/knative-private
+      service: knative-serving/knative-private-istio-private
+      supported-features:
+      - HTTPRouteRequestTimeout

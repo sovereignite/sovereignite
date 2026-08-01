@@ -160,7 +160,7 @@ spec:
           projected:
             sources:
               - serviceAccountToken:
-                  audience: spire-server
+                  audience: istio-ca
                   expirationSeconds: 43200
                   path: istio-token
         - name: cacerts

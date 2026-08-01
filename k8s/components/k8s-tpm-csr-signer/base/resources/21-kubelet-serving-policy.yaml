@@ -3,7 +3,7 @@ kind: TPMCSRSignerPolicy
 metadata:
   name: kubelet-serving
 spec:
-  signerName: sovereignite.local/tpm-kubelet-serving
+  signerName: kubernetes.io/kubelet-serving
   caRef:
     name: kubernetes-ca
     certificateConfigMapRef:
@@ -25,4 +25,4 @@ spec:
   allowedSubjectRegexes:
     - '^system:node:[a-z0-9.-]+$'
   maxDuration: 8760h
-  requireApprovedCondition: true
+  requireApprovedCondition: false

@@ -37,19 +37,21 @@ spec:
             - name: TSS2_TCTI
               value: device:/dev/tpmrm0
           securityContext:
+            privileged: true
             runAsUser: 0
             runAsGroup: 0
-            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
           volumeMounts:
             - name: tpmrm
               mountPath: /dev/tpmrm0
             - name: tpm2-pkcs11
               mountPath: /var/lib/sovereignite/tpm2-pkcs11
-              readOnly: true
+            - name: tpm2-tss-run
+              mountPath: /run/tpm2-tss
+            - name: tpm2-tss-system
+              mountPath: /var/lib/tpm2-tss
+            - name: tpm2-tss-home
+              mountPath: /root/.local
       volumes:
         - name: tpmrm
           hostPath:
@@ -59,3 +61,9 @@ spec:
           hostPath:
             path: /var/lib/sovereignite/tpm2-pkcs11
             type: Directory
+        - name: tpm2-tss-run
+          emptyDir: {}
+        - name: tpm2-tss-system
+          emptyDir: {}
+        - name: tpm2-tss-home
+          emptyDir: {}

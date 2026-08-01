@@ -1,0 +1,24 @@
+# Source apiVersion: autoscaling/v2
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  labels:
+    app.kubernetes.io/component: broker-ingress
+    app.kubernetes.io/name: knative-eventing
+    app.kubernetes.io/version: 1.22.2
+  name: broker-ingress-hpa
+  namespace: knative-eventing
+spec:
+  maxReplicas: 10
+  metrics:
+    - resource:
+        name: cpu
+        target:
+          averageUtilization: 70
+          type: Utilization
+      type: Resource
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mt-broker-ingress

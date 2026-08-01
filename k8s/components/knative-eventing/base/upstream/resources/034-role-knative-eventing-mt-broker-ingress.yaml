@@ -1,0 +1,23 @@
+# Source apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mt-broker-ingress
+  namespace: knative-eventing
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resourceNames:
+      - mt-broker-ingress-oidc
+    resources:
+      - serviceaccounts/token
+    verbs:
+      - create

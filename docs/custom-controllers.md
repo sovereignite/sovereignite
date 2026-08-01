@@ -32,8 +32,8 @@ Source: `controllers/k8s-tpm-csr-signer/cmd/k8s-tpm-csr-signer`
 Purpose:
 
 - Watches Kubernetes `CertificateSigningRequest` resources.
-- Handles signer names `sovereignite.local/tpm-kubelet-client` and
-  `sovereignite.local/tpm-kubelet-serving`.
+- Handles kubelet signer names `kubernetes.io/kube-apiserver-client-kubelet`
+  and `kubernetes.io/kubelet-serving`.
 - Enforces subject and usage policy before signing.
 - Replaces kube-controller-manager file-backed CSR signing.
 

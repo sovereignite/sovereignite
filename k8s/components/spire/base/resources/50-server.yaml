@@ -112,7 +112,7 @@ spec:
             periodSeconds: 10
           securityContext:
             allowPrivilegeEscalation: false
-            runAsGroup: 65532
+            runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 65532
           volumeMounts:

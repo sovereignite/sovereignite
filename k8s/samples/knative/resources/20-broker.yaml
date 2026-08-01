@@ -3,4 +3,9 @@ kind: Broker
 metadata:
   name: default
   namespace: sample-knative
-spec: {}
+spec:
+  config:
+    apiVersion: v1
+    kind: ConfigMap
+    name: config-br-default-channel
+    namespace: knative-eventing

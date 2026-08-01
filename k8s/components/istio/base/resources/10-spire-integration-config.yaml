@@ -4,6 +4,7 @@ metadata:
   name: istio-spire-integration
   namespace: istio-system
 data:
-  caAddress: spire-server.spire.svc:8081
+  caAddress: ""
+  sdsSocketPath: /run/spire/sockets/socket
   trustDomain: sovereignite.local
   mode: sidecar

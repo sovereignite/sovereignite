@@ -85,6 +85,15 @@ func (c *Client) MergePatch(path string, patch map[string]any) error {
 	return err
 }
 
+func (c *Client) JSONPatch(path string, patch []map[string]any) error {
+	body, err := json.Marshal(patch)
+	if err != nil {
+		return err
+	}
+	_, _, err = c.do(http.MethodPatch, path, body, "application/json-patch+json")
+	return err
+}
+
 func (c *Client) GetConfigMapValue(namespace, name, key string) (string, error) {
 	if key == "" {
 		key = "ca.crt"

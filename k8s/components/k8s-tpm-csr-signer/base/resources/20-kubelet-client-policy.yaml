@@ -3,7 +3,7 @@ kind: TPMCSRSignerPolicy
 metadata:
   name: kubelet-client
 spec:
-  signerName: sovereignite.local/tpm-kubelet-client
+  signerName: kubernetes.io/kube-apiserver-client-kubelet
   caRef:
     name: kubernetes-ca
     certificateConfigMapRef:

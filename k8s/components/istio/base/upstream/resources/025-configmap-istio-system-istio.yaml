@@ -7,8 +7,6 @@ data:
       discoveryAddress: istiod.istio-system.svc:15012
       holdApplicationUntilProxyStarts: true
       meshId: sovereignite
-      proxyMetadata:
-        ISTIO_META_CERT_SIGNER: spiffe.io/spire
     defaultProviders:
       metrics:
       - prometheus

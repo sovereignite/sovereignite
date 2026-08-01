@@ -2,4 +2,3 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - resources/10-strict-mtls.yaml
-  - resources/20-istio-mutual-destination-rule.yaml

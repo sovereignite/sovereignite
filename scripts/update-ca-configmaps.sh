@@ -3,6 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PKI_ROOT="${PKI_ROOT:-${ROOT_DIR}/build/pki}"
+KUBECONFIG="${KUBECONFIG:-${ROOT_DIR}/build/kubeconfig/admin.conf}"
+export KUBECONFIG
 
 require() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -71,8 +73,15 @@ if [ ! -f "${PKI_ROOT}/spire/tpm-endorsement-ca.crt" ]; then
   exit 66
 fi
 
+endorsement_bundle="${PKI_ROOT}/spire/tpm-endorsement-trust-bundle.crt"
+swtpm_bundle="${SWTPM_MANUFACTURER_CA_BUNDLE:-${ROOT_DIR}/infra/libvirt/build/swtpm/ca-bundle.pem}"
+cat "${PKI_ROOT}/spire/tpm-endorsement-ca.crt" > "${endorsement_bundle}"
+if [ -f "${swtpm_bundle}" ]; then
+  cat "${swtpm_bundle}" >> "${endorsement_bundle}"
+fi
+
 kubectl -n spire create configmap spire-tpm-attestor-ca \
   --from-file=tpm-devid-ca.pem="${PKI_ROOT}/spire/tpm-devid-ca.crt" \
-  --from-file=tpm-endorsement-ca.pem="${PKI_ROOT}/spire/tpm-endorsement-ca.crt" \
+  --from-file=tpm-endorsement-ca.pem="${endorsement_bundle}" \
   --dry-run=client \
   -o yaml | kubectl apply -f -

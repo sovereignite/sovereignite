@@ -131,6 +131,7 @@ spec:
   profiles:
     default:
       maxDuration: 2160h
+      allowWildcardDNSNames: true
       usages:
         - digital signature
         - key encipherment

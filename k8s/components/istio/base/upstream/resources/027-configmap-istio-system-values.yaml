@@ -35,7 +35,7 @@ data:
         "securityContext": {}
       },
       "global": {
-        "caAddress": "spire-server.spire.svc:8081",
+        "caAddress": "",
         "caName": "",
         "certSigners": [],
         "configCluster": false,
@@ -118,7 +118,7 @@ data:
         "resourceScope": "all",
         "sds": {
           "token": {
-            "aud": "spire-server"
+            "aud": "istio-ca"
           }
         },
         "sts": {
@@ -161,10 +161,7 @@ data:
       "meshConfig": {
         "accessLogFile": "/dev/stdout",
         "defaultConfig": {
-          "holdApplicationUntilProxyStarts": true,
-          "proxyMetadata": {
-            "ISTIO_META_CERT_SIGNER": "spiffe.io/spire"
-          }
+          "holdApplicationUntilProxyStarts": true
         },
         "enablePrometheusMerge": true,
         "trustDomain": "sovereignite.local"
@@ -237,7 +234,7 @@ data:
   original-values: |-
     {
       "global": {
-        "caAddress": "spire-server.spire.svc:8081",
+        "caAddress": "",
         "meshID": "sovereignite",
         "multiCluster": {
           "clusterName": "sovereignite"
@@ -247,17 +244,14 @@ data:
         },
         "sds": {
           "token": {
-            "aud": "spire-server"
+            "aud": "istio-ca"
           }
         }
       },
       "meshConfig": {
         "accessLogFile": "/dev/stdout",
         "defaultConfig": {
-          "holdApplicationUntilProxyStarts": true,
-          "proxyMetadata": {
-            "ISTIO_META_CERT_SIGNER": "spiffe.io/spire"
-          }
+          "holdApplicationUntilProxyStarts": true
         },
         "trustDomain": "sovereignite.local"
       },

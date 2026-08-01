@@ -1,0 +1,16 @@
+# Source apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/name: knative-eventing
+    app.kubernetes.io/version: 1.22.2
+  name: knative-eventing-mt-broker-ingress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: knative-eventing-mt-broker-ingress
+subjects:
+  - kind: ServiceAccount
+    name: mt-broker-ingress
+    namespace: knative-eventing

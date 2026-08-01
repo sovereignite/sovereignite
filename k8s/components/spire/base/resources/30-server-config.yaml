@@ -40,4 +40,17 @@ data:
           endorsement_ca_path = "/run/spire/tpm-attestor-ca/tpm-endorsement-ca.pem"
         }
       }
+
+      BundlePublisher "k8s_configmap" {
+        plugin_data {
+          clusters = {
+            "sovereignite" = {
+              configmap_name = "spire-agent-bundle"
+              configmap_key = "bundle.crt"
+              namespace = "spire"
+              format = "pem"
+            }
+          }
+        }
+      }
     }

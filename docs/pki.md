@@ -12,7 +12,7 @@ certificate profiles, and rotation windows.
   Kubernetes Secrets, or `/etc/kubernetes/pki`.
 - kube-controller-manager runs without the built-in CSR signing controller.
 - kubelet client and serving CSR rotation is handled by
-  `k8s-tpm-csr-signer`.
+  `k8s-tpm-csr-signer` for Kubernetes' built-in kubelet CSR signer names.
 - cert-manager is the lifecycle and request-flow surface for Kubernetes
   `Certificate` resources.
 - The root CA and every subordinate CA are represented as `TPMClusterIssuer`
@@ -86,9 +86,19 @@ used to create Kubernetes `tpm2-pkcs11-pin` Secrets. It is operational token
 access material, not CA private-key material. The repo ignores `build/`, and the
 file must not be committed.
 
-The `spire/tpm-devid-ca.crt` and `spire/tpm-endorsement-ca.crt` files populate
-the `spire-tpm-attestor-ca` ConfigMap used by the built-in SPIRE `tpm_devid`
-NodeAttestor.
+TPM-backed signing pods run privileged for TPM character-device access. They
+mount `/var/lib/sovereignite/tpm2-pkcs11` read-write so `tpm2-pkcs11` can
+create its SQLite lock file while opening the token. They also mount empty
+`/run/tpm2-tss`, `/var/lib/tpm2-tss`, and `/root/.local` directories because
+the root filesystem stays read-only.
+
+The `spire/tpm-devid-ca.crt` file populates the DevID root in the
+`spire-tpm-attestor-ca` ConfigMap used by the built-in SPIRE `tpm_devid`
+NodeAttestor. The endorsement bundle is generated as
+`spire/tpm-endorsement-trust-bundle.crt` from the project endorsement CA plus
+the libvirt swtpm manufacturer CA bundle produced by
+`scripts/manufacture-swtpm-states.sh`. SPIRE verifies each vTPM EK certificate
+against that manufacturer bundle before accepting the DevID residency proof.
 
 Each directory under `build/pki/tpm-devid/<node>` is staged to
 `/var/lib/sovereignite/tpm` on that node for SPIRE agent attestation.

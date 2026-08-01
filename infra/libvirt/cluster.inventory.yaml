@@ -66,7 +66,7 @@ spec:
       backend: emulator
       version: "2.0"
       model: tpm-tis
-      stateDir: /var/lib/libvirt/swtpm
+      stateDir: /tmp/sovereignite/swtpm/state
     flatcarImage:
       url: https://stable.release.flatcar-linux.net/amd64-usr/4593.2.4/flatcar_production_qemu_uefi_secure_image.img.bz2
       decompressedName: flatcar-stable-4593.2.4-uefi-secure.qcow2

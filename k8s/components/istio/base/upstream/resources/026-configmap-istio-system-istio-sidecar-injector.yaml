@@ -485,7 +485,9 @@ data:
               {{ end }}
               {{- end }}
           volumes:
-          - emptyDir:
+          - hostPath:
+              path: /run/spire/sockets
+              type: DirectoryOrCreate
             name: workload-socket
           - emptyDir:
             name: credential-socket
@@ -779,7 +781,9 @@ data:
             - name: istio-podinfo
               mountPath: /etc/istio/pod
           volumes:
-          - emptyDir:
+          - hostPath:
+              path: /run/spire/sockets
+              type: DirectoryOrCreate
             name: workload-socket
           - emptyDir: {}
             name: credential-socket
@@ -1160,7 +1164,9 @@ data:
         {{- end }}
         {{- end }}
           volumes:
-          - emptyDir:
+          - hostPath:
+              path: /run/spire/sockets
+              type: DirectoryOrCreate
             name: workload-socket
           {{- if eq .Values.global.caName "GkeWorkloadCertificate" }}
           - name: gke-workload-certificate
@@ -1504,7 +1510,9 @@ data:
                 - mountPath: /etc/istio/pod
                   name: istio-podinfo
               volumes:
-              - emptyDir: {}
+              - hostPath:
+                  path: /run/spire/sockets
+                  type: DirectoryOrCreate
                 name: workload-socket
               - emptyDir:
                   medium: Memory
@@ -1913,7 +1921,9 @@ data:
                 - name: istio-podinfo
                   mountPath: /etc/istio/pod
               volumes:
-              - emptyDir: {}
+              - hostPath:
+                  path: /run/spire/sockets
+                  type: DirectoryOrCreate
                 name: workload-socket
               - emptyDir: {}
                 name: credential-socket
@@ -2381,7 +2391,7 @@ data:
         "securityContext": {}
       },
       "global": {
-        "caAddress": "spire-server.spire.svc:8081",
+        "caAddress": "",
         "caName": "",
         "certSigners": [],
         "configCluster": false,
@@ -2464,7 +2474,7 @@ data:
         "resourceScope": "all",
         "sds": {
           "token": {
-            "aud": "spire-server"
+            "aud": "istio-ca"
           }
         },
         "sts": {

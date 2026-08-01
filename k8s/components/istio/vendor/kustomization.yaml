@@ -13,21 +13,16 @@ helmCharts:
   repo: https://istio-release.storage.googleapis.com/charts
   valuesInline:
     global:
-      caAddress: spire-server.spire.svc:8081
+      caAddress: ""
       meshID: sovereignite
       multiCluster:
         clusterName: sovereignite
       proxy:
         privileged: false
-      sds:
-        token:
-          aud: spire-server
     meshConfig:
       accessLogFile: /dev/stdout
       defaultConfig:
         holdApplicationUntilProxyStarts: true
-        proxyMetadata:
-          ISTIO_META_CERT_SIGNER: spiffe.io/spire
       trustDomain: sovereignite.local
     pilot:
       env:

@@ -110,7 +110,7 @@ module "flatcar_vm" {
   ovmf_code          = local.firmware.ovmfCode
   ovmf_vars_template = local.firmware.ovmfVarsTemplate
   nvram_path         = "${local.firmware.nvramDir}/${each.value.name}_VARS.fd"
-  tpm_state_path     = "${local.tpm.stateDir}/${each.value.name}"
+  tpm_state_path     = "${local.tpm_state_dir}/${each.value.name}"
   tpm_model          = local.tpm.model
   tpm_version        = local.tpm.version
 }

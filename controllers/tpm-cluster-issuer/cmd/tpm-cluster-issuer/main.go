@@ -74,12 +74,16 @@ func main() {
 }
 
 func reconcile(client *kubeapi.Client, issuerGroup, issuerKind, defaultProfile string) error {
+	issuers, err := loadIssuers(client)
+	if err != nil {
+		return err
+	}
+
 	requests, err := client.List(certificateRequestsPath)
 	if err != nil {
 		return err
 	}
 
-	issuers := map[string]issuer{}
 	for _, cr := range requests {
 		if kubeapi.NestedString(cr, "status", "certificate") != "" {
 			continue
@@ -94,13 +98,8 @@ func reconcile(client *kubeapi.Client, issuerGroup, issuerKind, defaultProfile s
 		}
 		iss, ok := issuers[issuerName]
 		if !ok {
-			loaded, err := loadIssuer(client, issuerName)
-			if err != nil {
-				log.Printf("issuer %s unavailable: %v", issuerName, err)
-				continue
-			}
-			iss = loaded
-			issuers[issuerName] = loaded
+			log.Printf("issuer %s unavailable", issuerName)
+			continue
 		}
 		if err := signCertificateRequest(client, iss, cr, defaultProfile); err != nil {
 			log.Printf("CertificateRequest %s/%s not signed: %v", kubeapi.Namespace(cr), kubeapi.Name(cr), err)
@@ -111,18 +110,31 @@ func reconcile(client *kubeapi.Client, issuerGroup, issuerKind, defaultProfile s
 	return nil
 }
 
-func loadIssuer(client *kubeapi.Client, name string) (issuer, error) {
-	obj, err := client.Get(issuersPath + "/" + name)
+func loadIssuers(client *kubeapi.Client) (map[string]issuer, error) {
+	items, err := client.List(issuersPath)
 	if err != nil {
-		return issuer{}, err
+		return nil, err
 	}
-	iss, err := parseIssuer(client, obj)
-	if err != nil {
-		patchIssuerReady(client, obj, "False", "InvalidIssuer", err.Error(), "")
-		return issuer{}, err
+
+	out := map[string]issuer{}
+	for _, obj := range items {
+		iss, err := parseIssuer(client, obj)
+		if err != nil {
+			patchIssuerReady(client, obj, "False", "InvalidIssuer", err.Error(), "")
+			log.Printf("issuer %s invalid: %v", kubeapi.Name(obj), err)
+			continue
+		}
+		if _, err := client.GetConfigMapValue(iss.CAConfigMapNamespace, iss.CAConfigMapName, iss.CAConfigMapKey); err != nil {
+			patchIssuerReady(client, obj, "False", "InvalidCA", err.Error(), "")
+			log.Printf("issuer %s CA unavailable: %v", kubeapi.Name(obj), err)
+			continue
+		}
+		if !issuerReady(obj) {
+			patchIssuerReady(client, obj, "True", "Ready", "issuer accepted", "")
+		}
+		out[iss.Name] = iss
 	}
-	patchIssuerReady(client, obj, "True", "Ready", "issuer accepted", "")
-	return iss, nil
+	return out, nil
 }
 
 func parseIssuer(client *kubeapi.Client, obj map[string]any) (issuer, error) {
@@ -246,19 +258,34 @@ func signCertificateRequest(client *kubeapi.Client, iss issuer, cr map[string]an
 	name := kubeapi.Name(cr)
 	cert64 := base64.StdEncoding.EncodeToString([]byte(issued.CertificatePEM))
 	ca64 := base64.StdEncoding.EncodeToString([]byte(issued.CAPEM))
-	if err := client.MergePatch("/apis/cert-manager.io/v1/namespaces/"+ns+"/certificaterequests/"+name+"/status", map[string]any{
-		"status": map[string]any{
-			"certificate": cert64,
-			"ca":          ca64,
-			"conditions": []map[string]any{
-				{
-					"type":               "Ready",
-					"status":             "True",
-					"reason":             "Issued",
-					"message":            "certificate issued by TPMClusterIssuer",
-					"lastTransitionTime": time.Now().UTC().Format(time.RFC3339),
-				},
-			},
+	readyCondition := map[string]any{
+		"type":               "Ready",
+		"status":             "True",
+		"reason":             "Issued",
+		"message":            "certificate issued by TPMClusterIssuer",
+		"lastTransitionTime": time.Now().UTC().Format(time.RFC3339),
+	}
+	var conditionValue any = readyCondition
+	conditionPath := "/status/conditions/-"
+	if _, ok := kubeapi.NestedMap(cr, "status")["conditions"].([]any); !ok {
+		conditionPath = "/status/conditions"
+		conditionValue = []map[string]any{readyCondition}
+	}
+	if err := client.JSONPatch("/apis/cert-manager.io/v1/namespaces/"+ns+"/certificaterequests/"+name+"/status", []map[string]any{
+		{
+			"op":    "add",
+			"path":  "/status/certificate",
+			"value": cert64,
+		},
+		{
+			"op":    "add",
+			"path":  "/status/ca",
+			"value": ca64,
+		},
+		{
+			"op":    "add",
+			"path":  conditionPath,
+			"value": conditionValue,
 		},
 	}); err != nil {
 		return err
@@ -301,6 +328,11 @@ func patchIssuerReady(client *kubeapi.Client, obj map[string]any, status, reason
 	if err := client.MergePatch(issuersPath+"/"+name+"/status", map[string]any{"status": st}); err != nil {
 		log.Printf("patch issuer %s status failed: %v", name, err)
 	}
+}
+
+func issuerReady(obj map[string]any) bool {
+	return kubeapi.Int64Value(kubeapi.NestedMap(obj, "status")["observedGeneration"]) == kubeapi.Generation(obj) &&
+		kubeapi.HasCondition(obj, "Ready", "True")
 }
 
 func usageSubset(requested, allowed []string) bool {

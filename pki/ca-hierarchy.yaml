@@ -169,6 +169,6 @@ spec:
     forbidNodeCAKeys: true
     kubeadmExternalCA: true
     csrSignerNames:
-      - sovereignite.local/tpm-kubelet-client
-      - sovereignite.local/tpm-kubelet-serving
+      - kubernetes.io/kube-apiserver-client-kubelet
+      - kubernetes.io/kubelet-serving
     spireTrustDomain: sovereignite.local

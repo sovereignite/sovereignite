@@ -77,13 +77,20 @@ func reconcile(client *kubeapi.Client, policyName string) error {
 	}
 	for _, csrObj := range csrs {
 		name := kubeapi.Name(csrObj)
-		if kubeapi.NestedString(csrObj, "status", "certificate") != "" {
-			continue
-		}
 		spec := kubeapi.NestedMap(csrObj, "spec")
 		signerName := kubeapi.StringValue(spec["signerName"])
 		p, ok := policies[signerName]
 		if !ok {
+			continue
+		}
+		if kubeapi.NestedString(csrObj, "status", "certificate") != "" {
+			if !p.RequireApprovedCondition && !kubeapi.HasCondition(csrObj, "Approved", "True") && !kubeapi.HasCondition(csrObj, "Denied", "True") {
+				if err := approveCSR(client, p, csrObj); err != nil {
+					log.Printf("CSR %s not approved: %v", name, err)
+					continue
+				}
+				log.Printf("CSR %s approved with policy %s", name, p.Name)
+			}
 			continue
 		}
 		if err := signCSR(client, p, csrObj); err != nil {
@@ -184,6 +191,11 @@ func signCSR(client *kubeapi.Client, p policy, csrObj map[string]any) error {
 	if p.RequireApprovedCondition && !kubeapi.HasCondition(csrObj, "Approved", "True") {
 		return fmt.Errorf("CSR is not approved")
 	}
+	if !p.RequireApprovedCondition && !kubeapi.HasCondition(csrObj, "Approved", "True") {
+		if err := approveCSR(client, p, csrObj); err != nil {
+			return fmt.Errorf("approve CSR: %w", err)
+		}
+	}
 
 	spec := kubeapi.NestedMap(csrObj, "spec")
 	request := kubeapi.StringValue(spec["request"])
@@ -237,6 +249,29 @@ func signCSR(client *kubeapi.Client, p policy, csrObj map[string]any) error {
 			"conditions": []map[string]any{
 				kubeapi.ReadyCondition("True", "Signed", "last signed serial "+issued.Serial),
 			},
+		},
+	})
+}
+
+func approveCSR(client *kubeapi.Client, p policy, csrObj map[string]any) error {
+	now := time.Now().UTC().Format(time.RFC3339)
+	condition := map[string]any{
+		"type":               "Approved",
+		"status":             "True",
+		"reason":             "TPMCSRSignerPolicy",
+		"message":            "Approved by k8s-tpm-csr-signer policy " + p.Name,
+		"lastUpdateTime":     now,
+		"lastTransitionTime": now,
+	}
+
+	existing, _ := kubeapi.NestedMap(csrObj, "status")["conditions"].([]any)
+	conditions := make([]any, 0, len(existing)+1)
+	conditions = append(conditions, existing...)
+	conditions = append(conditions, condition)
+
+	return client.MergePatch(csrsPath+"/"+kubeapi.Name(csrObj)+"/approval", map[string]any{
+		"status": map[string]any{
+			"conditions": conditions,
 		},
 	})
 }
