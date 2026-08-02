@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- apps_v1_deployment_agentgateway.yaml
+- rbac.authorization.k8s.io_v1_clusterrole_agentgateway-agentgateway-system.yaml
+- rbac.authorization.k8s.io_v1_clusterrolebinding_agentgateway-role-agentgateway-system.yaml
+- v1_namespace_agentgateway-system.yaml
+- v1_service_agentgateway.yaml
+- v1_serviceaccount_agentgateway.yaml

@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: agentgateway-role-agentgateway-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: agentgateway-agentgateway-system
+subjects:
+- kind: ServiceAccount
+  name: agentgateway
+  namespace: agentgateway-system
