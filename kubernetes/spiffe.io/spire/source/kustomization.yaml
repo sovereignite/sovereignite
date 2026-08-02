@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- clusterfederatedtrustdomains-crd.yaml
+- clusterspiffeids-crd.yaml
+- clusterstaticentries-crd.yaml
+- controllermanagerconfigs-crd.yaml
+- namespace.yaml
+- serviceaccounts.yaml
+- rbac.yaml
+- server-config.yaml
+- agent-bundle-configmap.yaml
+- controller-manager-config.yaml
+- tpm-attestor-ca.yaml
+- agent-config.yaml
+- server.yaml
+- agent.yaml
+- registration-policy.yaml
+- node-aliases.yaml

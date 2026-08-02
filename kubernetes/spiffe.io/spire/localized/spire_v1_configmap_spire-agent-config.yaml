@@ -1,0 +1,42 @@
+apiVersion: v1
+data:
+  agent.conf: |
+    agent {
+      data_dir = "/run/spire"
+      log_level = "INFO"
+      server_address = "spire-server.spire.svc"
+      server_port = "8081"
+      socket_path = "/run/spire/sockets/socket"
+      trust_bundle_path = "/run/spire/bundle/bundle.crt"
+      trust_domain = "sovereignite.local"
+
+      sds {
+        default_svid_name = "default"
+        default_bundle_name = "null"
+        default_all_bundles_name = "ROOTCA"
+      }
+    }
+
+    plugins {
+      KeyManager "memory" {
+        plugin_data = {}
+      }
+
+      NodeAttestor "tpm_devid" {
+        plugin_data {
+          devid_cert_path = "/var/lib/sovereignite/tpm/devid.crt"
+          devid_priv_path = "/var/lib/sovereignite/tpm/devid.priv.blob"
+          devid_pub_path = "/var/lib/sovereignite/tpm/devid.pub.blob"
+        }
+      }
+
+      WorkloadAttestor "k8s" {
+        plugin_data {
+          kubelet_read_only_port = 0
+        }
+      }
+    }
+kind: ConfigMap
+metadata:
+  name: spire-agent-config
+  namespace: spire

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-tpm-attestor-ca
+  namespace: spire
+data:
+  tpm-devid-ca.pem: ""
+  tpm-endorsement-ca.pem: ""

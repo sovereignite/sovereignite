@@ -1,0 +1,9 @@
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterStaticEntry
+metadata:
+  name: tpm-devid-node-worker-2
+spec:
+  parentID: spiffe://sovereignite.local/spire/server
+  selectors:
+  - tpm_devid:subject:cn:sovereignite-spire-tpm-devid-worker-2
+  spiffeID: spiffe://sovereignite.local/nodes/worker-2
