@@ -1,0 +1,28 @@
+apiVersion: pki.sovereignite.io/v1alpha1
+kind: TPMClusterIssuer
+metadata:
+  name: cert-manager-local-ca
+spec:
+  caRef:
+    name: cert-manager-local-ca
+  pkcs11:
+    keyLabel: sovereignite-cert-manager-ca
+    modulePath: /usr/lib64/pkcs11/libtpm2_pkcs11.so
+    tokenLabel: sovereignite-ca
+    userPinSecretRef:
+      key: user-pin
+      name: tpm2-pkcs11-pin
+      namespace: sovereignite-system
+  profiles:
+    default:
+      allowWildcardDNSNames: true
+      maxDuration: 2160h
+      usages:
+      - digital signature
+      - key encipherment
+      - server auth
+      - client auth
+  requestPolicy:
+    denyCARequests: true
+    requireApprovedCondition: true
+  signerName: tpmclusterissuers.pki.sovereignite.io/cert-manager-local-ca

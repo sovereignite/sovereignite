@@ -1,0 +1,29 @@
+apiVersion: pki.sovereignite.io/v1alpha1
+kind: TPMClusterIssuer
+metadata:
+  name: sovereignite-root
+spec:
+  caRef:
+    name: sovereignite-root
+  pkcs11:
+    keyLabel: sovereignite-root-ca
+    modulePath: /usr/lib64/pkcs11/libtpm2_pkcs11.so
+    tokenLabel: sovereignite-ca
+    userPinSecretRef:
+      key: user-pin
+      name: tpm2-pkcs11-pin
+      namespace: sovereignite-system
+  profiles:
+    default:
+      isCA: true
+      maxDuration: 43800h
+      maxPathLen: 1
+      usages:
+      - digital signature
+      - key encipherment
+      - cert sign
+      - crl sign
+  requestPolicy:
+    denyCARequests: false
+    requireApprovedCondition: true
+  signerName: tpmclusterissuers.pki.sovereignite.io/sovereignite-root

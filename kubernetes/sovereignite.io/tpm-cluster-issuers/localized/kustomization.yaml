@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- pki.sovereignite.io_v1alpha1_tpmclusterissuer_cert-manager-local-ca.yaml
+- pki.sovereignite.io_v1alpha1_tpmclusterissuer_etcd-ca.yaml
+- pki.sovereignite.io_v1alpha1_tpmclusterissuer_kubernetes-ca.yaml
+- pki.sovereignite.io_v1alpha1_tpmclusterissuer_kubernetes-front-proxy-ca.yaml
+- pki.sovereignite.io_v1alpha1_tpmclusterissuer_sovereignite-root.yaml
+- pki.sovereignite.io_v1alpha1_tpmclusterissuer_spire-tpm-devid-ca.yaml
+- pki.sovereignite.io_v1alpha1_tpmclusterissuer_spire-tpm-endorsement-ca.yaml
+- pki.sovereignite.io_v1alpha1_tpmclusterissuer_spire-upstream-ca.yaml
+- rbac.authorization.k8s.io_v1_clusterrole_cert-manager-controller-approve:pki-sovereignite-io.yaml
+- rbac.authorization.k8s.io_v1_clusterrolebinding_cert-manager-controller-approve:pki-sovereignite-io.yaml
