@@ -1,0 +1,28 @@
+apiVersion: pki.sovereignite.io/v1alpha1
+kind: TPMCSRSignerPolicy
+metadata:
+  name: kubelet-client
+spec:
+  signerName: kubernetes.io/kube-apiserver-client-kubelet
+  caRef:
+    name: kubernetes-ca
+    certificateConfigMapRef:
+      name: kubernetes-ca
+      namespace: sovereignite-system
+      key: ca.crt
+  pkcs11:
+    modulePath: /usr/lib64/pkcs11/libtpm2_pkcs11.so
+    tokenLabel: sovereignite-ca
+    keyLabel: sovereignite-kubernetes-ca
+    userPinSecretRef:
+      name: tpm2-pkcs11-pin
+      namespace: sovereignite-system
+      key: user-pin
+  allowedUsages:
+    - digital signature
+    - key encipherment
+    - client auth
+  allowedSubjectRegexes:
+    - '^system:node:[a-z0-9.-]+$'
+  maxDuration: 8760h
+  requireApprovedCondition: true
