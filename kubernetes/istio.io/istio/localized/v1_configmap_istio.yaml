@@ -1,0 +1,30 @@
+apiVersion: v1
+data:
+  mesh: |-
+    accessLogFile: /dev/stdout
+    defaultConfig:
+      discoveryAddress: istiod.istio-system.svc:15012
+      holdApplicationUntilProxyStarts: true
+      meshId: sovereignite
+    defaultProviders:
+      metrics:
+      - prometheus
+    enablePrometheusMerge: true
+    rootNamespace: istio-system
+    trustDomain: sovereignite.local
+  meshNetworks: 'networks: {}'
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: istiod
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: istiod
+    app.kubernetes.io/part-of: istio
+    app.kubernetes.io/version: 1.30.3
+    helm.sh/chart: istiod-1.30.3
+    install.operator.istio.io/owning-resource: unknown
+    istio.io/rev: default
+    operator.istio.io/component: Pilot
+    release: istiod
+  name: istio
+  namespace: istio-system

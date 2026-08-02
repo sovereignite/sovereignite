@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: istio-spire-integration
+  namespace: istio-system
+data:
+  caAddress: ""
+  sdsSocketPath: /run/spire/sockets/socket
+  trustDomain: sovereignite.local
+  mode: sidecar

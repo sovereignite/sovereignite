@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app: istio-egressgateway
+    app.kubernetes.io/instance: istio-egressgateway
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: istio-egressgateway
+    app.kubernetes.io/part-of: istio
+    app.kubernetes.io/version: 1.30.3
+    helm.sh/chart: gateway-1.30.3
+    istio: egressgateway
+    istio.io/dataplane-mode: none
+  name: istio-egressgateway
+  namespace: istio-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - watch
+  - list
