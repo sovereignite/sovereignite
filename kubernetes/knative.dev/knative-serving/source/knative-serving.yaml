@@ -1,0 +1,33 @@
+apiVersion: operator.knative.dev/v1beta1
+kind: KnativeServing
+metadata:
+  name: knative-serving
+  namespace: knative-serving
+spec:
+  ingress:
+    istio:
+      enabled: true
+      knative-ingress-gateway:
+        selector:
+          istio: ingressgateway
+      knative-local-gateway:
+        selector:
+          istio: ingressgateway
+  config:
+    domain:
+      sovereignite.local: ""
+    network:
+      auto-tls: Enabled
+    certmanager:
+      issuerRef: |
+        group: pki.sovereignite.io
+        kind: TPMClusterIssuer
+        name: cert-manager-local-ca
+      clusterLocalIssuerRef: |
+        group: pki.sovereignite.io
+        kind: TPMClusterIssuer
+        name: cert-manager-local-ca
+      systemInternalIssuerRef: |
+        group: pki.sovereignite.io
+        kind: TPMClusterIssuer
+        name: cert-manager-local-ca
