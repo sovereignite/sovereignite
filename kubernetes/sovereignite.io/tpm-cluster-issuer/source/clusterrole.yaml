@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tpm-cluster-issuer
+rules:
+- apiGroups: [pki.sovereignite.io]
+  resources: [tpmclusterissuers, tpmclusterissuers/status]
+  verbs: [get, list, watch, update, patch]
+- apiGroups: [cert-manager.io]
+  resources: [certificaterequests, certificaterequests/status]
+  verbs: [get, list, watch, update, patch]
+- apiGroups: [""]
+  resources: [configmaps, secrets]
+  verbs: [get, list, watch]
+- apiGroups: [""]
+  resources: [events]
+  verbs: [create, patch]

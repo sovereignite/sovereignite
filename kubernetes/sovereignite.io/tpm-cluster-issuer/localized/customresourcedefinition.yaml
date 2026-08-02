@@ -1,0 +1,97 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: tpmclusterissuers.pki.sovereignite.io
+spec:
+  group: pki.sovereignite.io
+  scope: Cluster
+  names:
+    plural: tpmclusterissuers
+    singular: tpmclusterissuer
+    kind: TPMClusterIssuer
+    shortNames: [tpmci]
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    additionalPrinterColumns:
+    - name: Ready
+      type: string
+      jsonPath: .status.conditions[?(@.type=="Ready")].status
+    - name: Signer
+      type: string
+      jsonPath: .spec.signerName
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+    schema:
+      openAPIV3Schema:
+        type: object
+        required: [spec]
+        properties:
+          spec:
+            type: object
+            required: [caRef, pkcs11, signerName]
+            properties:
+              signerName: {type: string, minLength: 1}
+              caRef:
+                type: object
+                required: [name]
+                properties:
+                  name: {type: string}
+                  certificateConfigMapRef:
+                    type: object
+                    properties:
+                      name: {type: string}
+                      namespace: {type: string}
+                      key: {type: string, default: ca.crt}
+              pkcs11:
+                type: object
+                required: [modulePath, tokenLabel, keyLabel]
+                properties:
+                  modulePath: {type: string}
+                  tokenLabel: {type: string}
+                  keyLabel: {type: string}
+                  userPinSecretRef:
+                    type: object
+                    required: [name, namespace, key]
+                    properties:
+                      name: {type: string}
+                      namespace: {type: string}
+                      key: {type: string}
+                  userPinEnv: {type: string}
+              profiles:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    maxDuration: {type: string}
+                    usages: {type: array, items: {type: string}}
+                    allowedDNSDomains: {type: array, items: {type: string}}
+                    allowedSpiffeTrustDomains: {type: array, items: {type: string}}
+                    allowWildcardDNSNames: {type: boolean, default: false}
+                    isCA: {type: boolean, default: false}
+                    maxPathLen: {type: integer, format: int32, minimum: 0}
+              requestPolicy:
+                type: object
+                properties:
+                  requireApprovedCondition: {type: boolean, default: true}
+                  denyCARequests: {type: boolean, default: true}
+          status:
+            type: object
+            properties:
+              observedGeneration: {type: integer, format: int64}
+              lastIssuedSerial: {type: string}
+              conditions:
+                type: array
+                items:
+                  type: object
+                  required: [type, status]
+                  properties:
+                    type: {type: string}
+                    status: {type: string, enum: ["True", "False", Unknown]}
+                    reason: {type: string}
+                    message: {type: string}
+                    lastTransitionTime: {type: string, format: date-time}
+    subresources:
+      status: {}
