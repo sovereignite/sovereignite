@@ -1,6 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - upstream
-  - resources/20-tpm-cluster-issuer.yaml
-  - resources/21-tpm-cluster-issuer-approval-rbac.yaml

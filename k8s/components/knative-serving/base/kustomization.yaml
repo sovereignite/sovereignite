@@ -1,8 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - upstream
-patches:
-  - path: resources/20-config-domain.yaml
-  - path: resources/21-config-network.yaml
-  - path: resources/22-config-certmanager.yaml
