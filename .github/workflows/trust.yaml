@@ -48,19 +48,6 @@ jobs:
           version: latest
           args: ./cmd/trust/... ./internal/trust/...
 
-      - name: Create issue on failure
-        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: actions/github-script@v9
-        with:
-          script: |
-            github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `Lint failed: trust (${context.sha.substring(0, 7)})`,
-              body: `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              labels: ['ci-failure', 'trust']
-            })
-
   test:
     needs: lint
     runs-on: ubuntu-latest
@@ -83,19 +70,6 @@ jobs:
         with:
           name: test-report
           path: reports/tests.xml
-
-      - name: Create issue on failure
-        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: actions/github-script@v9
-        with:
-          script: |
-            github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `Test failed: trust (${context.sha.substring(0, 7)})`,
-              body: `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              labels: ['ci-failure', 'trust']
-            })
 
   build:
     needs: test
@@ -178,3 +152,19 @@ jobs:
           subject-name: ${{ needs.build.outputs.image }}
           subject-digest: ${{ needs.build.outputs.digest }}
           push-to-registry: true
+
+  notify-failure:
+    if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [lint, test, build, scan, sign, attest]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Build failed: trust (${context.sha.substring(0, 7)})`,
+              body: `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['ci-failure', 'trust']
+            })
