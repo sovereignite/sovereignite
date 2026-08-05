@@ -6,12 +6,18 @@ require (
 	github.com/ThalesIgnite/crypto11 v1.2.5
 	github.com/google/go-tpm v0.9.8
 	github.com/google/go-tpm-tools v0.4.9
+	github.com/ipfs/go-cid v0.6.2
+	github.com/libp2p/go-libp2p/core v0.43.0-rc2
+	github.com/multiformats/go-multibase v0.3.0
+	github.com/multiformats/go-multicodec v0.10.0
+	github.com/multiformats/go-multihash v0.2.3
 	github.com/spiffe/spire-plugin-sdk v1.15.2
-	google.golang.org/grpc v1.74.2
+	google.golang.org/grpc v1.82.1
 )
 
 require (
 	github.com/GoogleCloudPlatform/confidential-space/server v0.0.0-20260522213940-e5c6d01a3007 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-configfs-tsm v0.3.3-0.20240919001351-b4b5b84fdcbc // indirect
@@ -23,18 +29,30 @@ require (
 	github.com/hashicorp/go-hclog v0.15.0 // indirect
 	github.com/hashicorp/go-plugin v1.4.0 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
+	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
+	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/miekg/pkcs11 v1.0.3-0.20190429190417-a667d056470f // indirect
+	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/mitchellh/go-testing-interface v0.0.0-20171004221916-a61a99592b77 // indirect
+	github.com/mr-tron/base58 v1.3.0 // indirect
+	github.com/multiformats/go-base32 v0.1.0 // indirect
+	github.com/multiformats/go-base36 v0.2.0 // indirect
+	github.com/multiformats/go-multiaddr v0.16.0 // indirect
+	github.com/multiformats/go-varint v0.1.0 // indirect
 	github.com/oklog/run v1.0.0 // indirect
-	github.com/pkg/errors v0.8.1 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/spaolacci/murmur3 v1.1.0 // indirect
+	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/thales-e-security/pool v0.0.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.45.0 // indirect
-	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a // indirect
+	golang.org/x/crypto v0.53.0 // indirect
+	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
+	lukechampine.com/blake3 v1.4.1 // indirect
 )
