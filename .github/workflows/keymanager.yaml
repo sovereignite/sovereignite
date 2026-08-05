@@ -34,7 +34,7 @@ jobs:
         run: |
           REF=$(ko build --tags ${{ github.ref_name }} --base-import-paths ./cmd/keymanager)
           echo "digest=$(echo "$REF" | grep -oP 'sha256:[a-f0-9]+')" >> "$GITHUB_OUTPUT"
-          echo "image=$(echo "$REF" | sed 's/@.*//')" >> "$GITHUB_OUTPUT"
+          echo "image=$(echo "$REF" | sed 's/[:@].*//')" >> "$GITHUB_OUTPUT"
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
