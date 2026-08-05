@@ -60,7 +60,7 @@ func run(arguments []string, stderr io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("%s: open TPM: %w", mode, err)
 	}
-	defer backend.Close()
+	defer func() { _ = backend.Close() }()
 
 	store, err := keymanager.NewFileStore(strings.TrimSpace(*metadataPath))
 	if err != nil {
