@@ -1,4 +1,4 @@
-name: keymanager
+name: Build keymanager
 
 on:
   push:
@@ -14,6 +14,8 @@ on:
 permissions:
   contents: read
   packages: write
+  id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -28,6 +30,16 @@ jobs:
       - uses: ko-build/setup-ko@v0.8
 
       - name: Build and push
+        id: build
         env:
           KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sovereignite
-        run: ko build --tags ${{ github.ref_name }} ./cmd/keymanager
+        run: |
+          DIGEST=$(ko build --tags ${{ github.ref_name }} ./cmd/keymanager)
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/sovereignite/keymanager
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
