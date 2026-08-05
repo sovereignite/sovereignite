@@ -29,8 +29,9 @@ builds:
   - id: trust
     dir: .
     main: ./cmd/trust
+    baseImage: gcr.io/distroless/static-debian13
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     ldflags:
       - -s -w
 
