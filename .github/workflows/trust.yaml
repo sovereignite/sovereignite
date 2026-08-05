@@ -141,6 +141,13 @@ jobs:
         with:
           sarif_file: ${{ steps.scan.outputs.sarif }}
 
+      - name: Upload SARIF report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sarif-report
+          path: ${{ steps.scan.outputs.sarif }}
+
   sign:
     needs: [build, scan]
     runs-on: ubuntu-latest
