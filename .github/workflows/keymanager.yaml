@@ -32,6 +32,7 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: latest
+          args: ./cmd/keymanager/... ./internal/keymanager/... ./internal/tpm/...
 
       - name: Test
         run: go test ./cmd/keymanager/... ./internal/keymanager/... ./internal/tpm/...
