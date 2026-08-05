@@ -2,54 +2,50 @@
 
 Secure Kubernetes deployment scaffolding for Libvirt/KVM.
 
-This repository uses the Nix flake only as a local development shell. Cluster
-provisioning and Kubernetes deployment are implemented with OpenTofu, Butane,
-plain scripts, and Kustomize overlays.
+## Services
 
-## What Is Defined
+| Service | Description |
+| --- | --- |
+| `keymanager` | Non-exportable TPM signing keys by reviewed role and persistent-handle policy |
+| `libp2p-init` | Lifetime-stable libp2p identity from TPM signing key |
+| `ipfs` | Full Kubo node with TPM-backed IPNS signing and publication |
+| `trust` | Trust domain management and certificate issuance |
+| `discovery` | mDNS/BLE discovery broadcaster |
+| `bootstrap` | Nine-step cluster bootstrap orchestrator |
+| `keyvalidation` | gRPC key validation and JWT issuance |
 
-- 8 Fedora CoreOS VMs on Libvirt/KVM: 3 control-plane nodes and 5 workers.
-- Installer-based OS provisioning with empty provider-owned root disks and
-  per-node customized Fedora CoreOS live ISOs.
-- OVMF Secure Boot and TPM2/vTPM domain XML for every VM.
-- kubeadm HA configuration in external CA mode.
-- Calico, Gateway API, cert-manager, SPIRE, Istio sidecar mode, Knative Serving,
-  Knative Eventing, Knative net-gateway-api, private Gateway resources, and
-  STRICT mesh mTLS policy.
-- Repo-owned custom APIs, Go controller/plugin source, and Dockerfiles for
-  TPM-backed certificate issuance, Kubernetes CSR signing, and SPIRE TPM key
-  management.
-
-## Quick Start
+## Build
 
 ```bash
 nix develop
-scripts/materialize-k8s-components.sh
-scripts/verify-repo.sh
-scripts/build-controller-images.sh
-scripts/fetch-node-os-artifacts.sh
-SSH_AUTHORIZED_KEY="$(cat ~/.ssh/id_ed25519.pub)" scripts/render-ignition.sh
-scripts/build-node-installer-isos.sh
-cd infra/libvirt
-tofu init
-tofu apply -var=create_managed_network=true
+ko build --local ./cmd/keymanager
 ```
 
-After the VMs are running, initialize and stage TPM-backed PKI material as
-described in [docs/pki.md](docs/pki.md), then:
+All 7 services are defined in `.ko.yaml` and built with `ko`. Container images are
+`linux/amd64` with `CGO_ENABLED=1` on a Fedora 44 base.
+
+## Kubernetes
+
+DaemonSets are under `kubernetes/sovereignite.io/<service>/` with the
+`source/`→`localized/` pattern. Edit values in `source/kustomization.yaml`
+and render with:
 
 ```bash
-scripts/stage-pki-to-nodes.sh
-scripts/bootstrap-kubeadm.sh
-scripts/update-ca-configmaps.sh
-scripts/verify-cluster.sh
+kustomize build kubernetes/sovereignite.io/keymanager/source
 ```
 
-The final Kubernetes deployment entrypoint is:
+## CI/CD
 
-```bash
-kubectl apply -k k8s/overlays/local
+GitHub Actions workflows build and push images to `ghcr.io/sovereignite/sovereignite`.
+Per-service workflows trigger only on their own code paths.
+
+## Repository Structure
+
 ```
-
-Do not deploy from `k8s/components/*/source`; those directories are only inputs
-for localizing and rendering pinned upstream resources into local bases.
+cmd/                          Service entry points
+internal/                     Domain packages
+pkg/api/proto/sovereignite/v1 Protobuf/gRPC API
+kubernetes/sovereignite.io/   DaemonSet kustomizations
+.os/systemd/                 systemd unit files
+.github/workflows/            CI/CD pipelines
+```

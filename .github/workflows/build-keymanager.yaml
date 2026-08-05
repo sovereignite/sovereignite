@@ -7,8 +7,6 @@ on:
       - 'cmd/keymanager/**'
       - 'internal/keymanager/**'
       - 'internal/tpm/**'
-      - 'internal/shared/**'
-      - 'internal/endpoint/**'
       - '.ko.yaml'
       - 'go.mod'
       - 'go.sum'
