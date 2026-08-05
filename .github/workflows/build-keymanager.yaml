@@ -12,37 +12,13 @@ on:
       - '.ko.yaml'
       - 'go.mod'
       - 'go.sum'
-      - '.github/workflows/build-keymanager.yaml'
+      - '.github/workflows/*keymanager*'
   workflow_dispatch:
-
-permissions:
-  contents: read
-  packages: write
-
-env:
-  KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sovereignite
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
-      - uses: ko-build/setup-ko@v0.9
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - id: build
-        uses: ko-build/ko-action@v0.12
-        with:
-          build: keymanager
-          base-ref: ${{ github.ref_name }}
-          tag-only: true
+    uses: ./.github/workflows/build-service.yaml
+    with:
+      build: keymanager
+    secrets:
+      GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}

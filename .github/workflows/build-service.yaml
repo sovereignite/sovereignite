@@ -1,0 +1,47 @@
+name: Build service image
+
+on:
+  workflow_call:
+    inputs:
+      build:
+        required: true
+        type: string
+        description: ko build ID from .ko.yaml
+      paths:
+        required: false
+        type: string
+        description: Comma-separated path filters for trigger
+    secrets:
+      GHCR_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sovereignite
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: ko-build/setup-ko@v0.9
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - uses: ko-build/ko-action@v0.12
+        with:
+          build: ${{ inputs.build }}
+          base-ref: ${{ github.ref_name }}
+          tag-only: true
