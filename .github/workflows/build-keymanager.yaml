@@ -2,7 +2,7 @@ name: Build keymanager
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - 'cmd/keymanager/**'
       - 'internal/keymanager/**'
@@ -18,5 +18,4 @@ jobs:
     uses: ./.github/workflows/build-service.yaml
     with:
       build: keymanager
-    secrets:
-      GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    secrets: inherit
