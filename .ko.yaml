@@ -1,12 +1,9 @@
-defaultBaseImage: fedora:44
-defaultPlatforms:
-  - linux/amd64
 builds:
   - id: keymanager
     dir: .
     main: ./cmd/keymanager
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     ldflags:
       - -s -w
 
@@ -14,7 +11,7 @@ builds:
     dir: .
     main: ./cmd/libp2p-init
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     ldflags:
       - -s -w
 
@@ -22,7 +19,7 @@ builds:
     dir: .
     main: ./cmd/ipfs
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     ldflags:
       - -s -w
 
@@ -30,7 +27,7 @@ builds:
     dir: .
     main: ./cmd/trust
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     ldflags:
       - -s -w
 
@@ -38,7 +35,7 @@ builds:
     dir: .
     main: ./cmd/discovery
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     ldflags:
       - -s -w
 
@@ -46,7 +43,7 @@ builds:
     dir: .
     main: ./cmd/bootstrap
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     ldflags:
       - -s -w
 
@@ -54,6 +51,6 @@ builds:
     dir: .
     main: ./cmd/keyvalidation
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     ldflags:
       - -s -w
