@@ -24,3 +24,24 @@ References:
 
 Links:
 - see-also: 202608010211
+
+## 202608040000 Node IPv6 Address Derives From Its IPFS Id
+
+A Sovereignite node must not carry an assigned IP address. Its lifetime-stable libp2p/IPFS identity (derived from a non-exportable TPM signing key) is the source of its IPv6 address: derive the address within the ULA site prefix from the node's own IPFS id. Then no registry or static host entry ever assigns an address, and each device is uniquely and deterministically addressed on any network it joins.
+
+References:
+- user-decision: conversation: our nodes when they setup and generate their IPFS id should be using that for the ipv6 address cidr, each node is unique
+
+Links:
+- see-also: 202608010212
+
+## 202608040001 Domain-Separated ULA Computation Utility
+
+Deterministic IPv6 ULA /48 from a binary identifier (IPNS CID bytes) requires a domain separator to prevent cross-protocol collisions. The pattern: `SHA-256(domain_separator || identifier)`, take first 5 bytes after `0xfd` prefix byte, produce `/48`. The domain separator is a project-rooted string + NUL terminator (e.g. `github.com/sovereignite/sovereignite/ula/v1\x00`). When the module path changes, golden test vectors must be recomputed because the domain separator changes. A standalone Go program that computes ULA from arbitrary hex-encoded identifiers and domain separators is a useful migration tool.
+
+References:
+- technical: algorithm in `internal/ipfs/ula.go` and `internal/shared/identity_vectors.go`
+- migration-tool: `/tmp/compute-golden.go` (ULA golden test vector recomputation)
+
+Links:
+- see-also: 202608040000

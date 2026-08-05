@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+[Unit]
+Description=Sovereignite TPM-backed first-boot identity initialization
+After=dev-tpmrm0.device local-fs.target
+Wants=dev-tpmrm0.device
+Before=sovereignite-keymanager.service
+ConditionPathExists=!/var/lib/sovereignite/identity/tpm-initialized
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStartPre=/usr/bin/test -c /dev/tpmrm0
+ExecStartPre=/usr/bin/test -x /usr/bin/sovereignite-keymanager
+ExecStart=/usr/bin/sovereignite-keymanager initialize
+ExecStartPost=/usr/bin/touch /var/lib/sovereignite/identity/tpm-initialized
+RemainAfterExit=yes
+DevicePolicy=closed
+DeviceAllow=/dev/tpmrm0 rw
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/sovereignite/identity /var/lib/sovereignite/keymanager
+RestrictAddressFamilies=AF_UNIX
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=sovereignite-pre-kubernetes.target

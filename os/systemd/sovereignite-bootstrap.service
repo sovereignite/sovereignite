@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+[Unit]
+Description=Sovereignite Kubernetes bootstrap service
+Requires=sovereignite-keymanager.service sovereignite-trust.service
+After=sovereignite-keymanager.service sovereignite-trust.service containerd.service
+Wants=containerd.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+UMask=0077
+RuntimeDirectory=sovereignite/bootstrap
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=no
+ExecStartPre=/usr/bin/test -x /usr/bin/sovereignite-bootstrap
+ExecStart=/usr/bin/sovereignite-bootstrap
+ExecStartPost=/opt/sovereignite/bin/sovereignite-wait-ready bootstrap-prepared /run/sovereignite/bootstrap/prepared.json 120
+TimeoutStartSec=135s
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=strict
+ReadWritePaths=/etc/kubernetes /run/sovereignite/bootstrap
+ReadWritePaths=/var/lib/sovereignite/bootstrap /var/lib/kubelet
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=sovereignite-pre-kubernetes.target

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
+echo "DO NOT COPY OR FOLLOW THIS SCRIPT"
+exit 1
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REGISTRY="${REGISTRY:-ghcr.io/sovereignite}"
 TAG="${TAG:-v0.1.0}"

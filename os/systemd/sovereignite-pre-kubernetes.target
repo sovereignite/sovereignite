@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+[Unit]
+Description=Sovereignite pre-Kubernetes services
+Requires=sovereignite-tpm-firstboot.service sovereignite-keymanager.service
+Requires=sovereignite-libp2p-init.service
+Requires=sovereignite-ipfs.service sovereignite-trust.service
+Requires=sovereignite-discovery.service sovereignite-bootstrap.service
+BindsTo=sovereignite-keymanager.service
+BindsTo=sovereignite-libp2p-init.service
+BindsTo=sovereignite-ipfs.service sovereignite-trust.service
+BindsTo=sovereignite-discovery.service sovereignite-bootstrap.service
+After=local-fs.target sovereignite-tpm-firstboot.service
+After=sovereignite-keymanager.service
+After=sovereignite-libp2p-init.service sovereignite-ipfs.service
+After=sovereignite-trust.service sovereignite-discovery.service
+After=sovereignite-bootstrap.service
+Before=kubelet.service
+
+[Install]
+WantedBy=multi-user.target

@@ -4,19 +4,23 @@ go 1.26
 
 require (
 	github.com/ThalesIgnite/crypto11 v1.2.5
+	github.com/godbus/dbus/v5 v5.2.2
 	github.com/google/go-tpm v0.9.8
 	github.com/google/go-tpm-tools v0.4.9
+	github.com/grandcat/zeroconf v1.0.0
 	github.com/ipfs/go-cid v0.6.2
 	github.com/libp2p/go-libp2p/core v0.43.0-rc2
+	github.com/multiformats/go-multiaddr v0.16.0
 	github.com/multiformats/go-multibase v0.3.0
-	github.com/multiformats/go-multicodec v0.10.0
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/spiffe/spire-plugin-sdk v1.15.2
 	google.golang.org/grpc v1.82.1
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
 	github.com/GoogleCloudPlatform/confidential-space/server v0.0.0-20260522213940-e5c6d01a3007 // indirect
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
@@ -33,13 +37,14 @@ require (
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/miekg/dns v1.1.27 // indirect
 	github.com/miekg/pkcs11 v1.0.3-0.20190429190417-a667d056470f // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/mitchellh/go-testing-interface v0.0.0-20171004221916-a61a99592b77 // indirect
 	github.com/mr-tron/base58 v1.3.0 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.2.0 // indirect
-	github.com/multiformats/go-multiaddr v0.16.0 // indirect
+	github.com/multiformats/go-multicodec v0.10.0 // indirect
 	github.com/multiformats/go-varint v0.1.0 // indirect
 	github.com/oklog/run v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -53,6 +58,5 @@ require (
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
 	lukechampine.com/blake3 v1.4.1 // indirect
 )

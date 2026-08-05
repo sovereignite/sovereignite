@@ -1,0 +1,132 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
+
+set -eu
+
+die() {
+  echo "sovereignite-wait-ready: $*" >&2
+  exit 1
+}
+
+validate_discovery_config() {
+  config=/run/sovereignite/discovery/config.env
+  [ -f "${config}" ] && [ ! -L "${config}" ] ||
+    die "Trust readiness requires a regular discovery configuration"
+  [ "$(stat -c '%u:%a' "${config}" 2>/dev/null || true)" = "0:600" ] ||
+    die "discovery configuration must be root-owned mode 0600"
+  [ "$(wc -c <"${config}" | tr -d ' ')" -le 65536 ] ||
+    die "discovery configuration exceeds 64 KiB"
+  actual_keys=$(sed -n 's/^\([^=]*\)=.*$/\1/p' "${config}")
+  expected_keys=$(printf '%s\n' \
+    SOVEREIGNITE_DEVICE_ID \
+    SOVEREIGNITE_TRUST_DOMAIN \
+    SOVEREIGNITE_ADOPTION_STATE \
+    SOVEREIGNITE_SERVICE_PORT \
+    SOVEREIGNITE_BLE_SERVICE_UUID \
+    SOVEREIGNITE_BLUEZ_ADAPTER)
+  [ "${actual_keys}" = "${expected_keys}" ] ||
+    die "discovery configuration does not contain exactly the six ordered contract keys"
+  while IFS= read -r line; do
+    case "${line}" in
+      *=?*) ;;
+      *) die "discovery configuration contains an empty or malformed value" ;;
+    esac
+  done <"${config}"
+}
+
+validate_identity_endpoint() {
+  endpoint=$1
+  [ -f "${endpoint}" ] && [ ! -L "${endpoint}" ] ||
+    return 1
+  [ "$(stat -c '%u:%a' "${endpoint}" 2>/dev/null || true)" = "${expected_uid}:600" ] ||
+    die "identity endpoint must be service-owned mode 0600"
+  grep -F -x -q '  "service": "identity",' "${endpoint}" ||
+    die "identity endpoint has the wrong service"
+  grep -F -x -q "  \"boot_id\": \"${boot_id}\"," "${endpoint}" ||
+    die "identity endpoint is stale or has the wrong boot ID"
+  grep -F -x -q '  "network": "tcp4",' "${endpoint}" ||
+    die "identity endpoint has the wrong network"
+  grep -F -x -q '  "address": "127.0.0.1",' "${endpoint}" ||
+    die "identity endpoint is not bound to IPv4 loopback"
+  if [ -n "${MAINPID:-}" ]; then
+    grep -F -x -q "  \"pid\": ${MAINPID}," "${endpoint}" ||
+      die "identity endpoint is not owned by the service main process"
+  fi
+  port=$(sed -n 's/^  "port": \([0-9][0-9]*\),$/\1/p' "${endpoint}")
+  case "${port}" in
+    ""|*[!0-9]*) die "identity endpoint has no valid port" ;;
+  esac
+  [ "${port}" -ge 1024 ] && [ "${port}" -le 65535 ] ||
+    die "identity endpoint is not a high TCP port"
+  expected_identity=$(
+    sed -n 's/^  "expected_identity": "\([^"]\{1,\}\)"$/\1/p' "${endpoint}"
+  )
+  [ -n "${expected_identity}" ] ||
+    die "identity endpoint has no expected identity"
+  return 0
+}
+
+[ "$#" -eq 3 ] ||
+  die "usage: sovereignite-wait-ready <service> <ready-file> <timeout-seconds>"
+
+service=$1
+ready_file=$2
+timeout=$3
+
+case "${service}" in
+  ""|*[!a-z0-9-]*) die "invalid service name" ;;
+esac
+case "${service}" in
+  identity)
+    expected_path=/run/sovereignite/identity/endpoint.json
+    ;;
+  bootstrap-prepared)
+    expected_path=/run/sovereignite/bootstrap/prepared.json
+    ;;
+  *)
+    expected_path="/run/sovereignite/${service}/ready.json"
+    ;;
+esac
+[ "${ready_file}" = "${expected_path}" ] ||
+  die "ready file does not match its service-owned boot-scoped path"
+case "${timeout}" in
+  ""|*[!0-9]*) die "timeout must be a positive integer" ;;
+esac
+[ "${timeout}" -gt 0 ] || die "timeout must be positive"
+
+boot_id=$(tr -d '\n' </proc/sys/kernel/random/boot_id)
+case "${boot_id}" in
+  ????????-????-????-????-????????????) ;;
+  *) die "kernel boot ID is unavailable or malformed" ;;
+esac
+expected=$(printf '{"version":1,"service":"%s","boot_id":"%s","ready":true}' \
+  "${service}" "${boot_id}")
+expected_uid=$(id -u)
+
+start=$(date +%s)
+deadline=$((start + timeout))
+while :; do
+  if [ -n "${MAINPID:-}" ] && ! kill -0 "${MAINPID}" 2>/dev/null; then
+    die "service process exited before readiness"
+  fi
+  if [ "${service}" = "identity" ] &&
+    validate_identity_endpoint "${ready_file}"; then
+    exit 0
+  fi
+  if [ -f "${ready_file}" ] && [ ! -L "${ready_file}" ]; then
+    ownership=$(stat -c '%u:%a' "${ready_file}" 2>/dev/null || true)
+    if [ "${ownership}" = "${expected_uid}:600" ]; then
+      actual=$(cat -- "${ready_file}" 2>/dev/null || true)
+      if [ "${actual}" = "${expected}" ]; then
+        if [ "${service}" = "trust" ]; then
+          validate_discovery_config
+        fi
+        exit 0
+      fi
+    fi
+  fi
+  now=$(date +%s)
+  [ "${now}" -lt "${deadline}" ] ||
+    die "${service} did not publish valid readiness within ${timeout}s"
+  sleep 1
+done

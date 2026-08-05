@@ -313,13 +313,18 @@ for configurability.
 | 2026-08-04 | internal/shared built | Peer ID, IPNS name, ULA derivation with 7 passing tests. |
 | 2026-08-04 | internal/tpm built | Open/Close/ReadPublic with fail-closed boundary. |
 | 2026-08-04 | internal/endpoint built | Publish/Read/Validate/Cleanup with atomic rename, boot ID, 5 passing tests. |
+| 2026-08-04 | Archive source tree migrated | 146 Go files, 2 proto files extracted from tarball. Module path replaced `sovereignite.net` → `github.com/sovereignite/sovereignite`. `go build ./...` clean. |
+| 2026-08-04 | Proto regenerated from .proto source | Fixed corrupted raw descriptor (sed had mangled binary blob). `go_package` updated to new module path. `protoc` + `protoc-gen-go` + `protoc-gen-go-grpc` via nix dev shell. |
+| 2026-08-04 | ULA test vectors updated | Domain separator changed from `sovereignite.net` → `github.com/sovereignite/sovereignite`. Updated 3 golden test vectors across `internal/shared` and `internal/ipfs`. All 18 packages pass. |
+| 2026-08-04 | Flake updated with proto tooling | Added `protobuf`, `protoc-gen-go`, `protoc-gen-go-grpc` to nix dev shell. |
 
 ## Decisions
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-08-04 | All services built into containers via `ko` | Consistent with existing controller build pattern (fedora:44 base, linux/amd64, CGO). |
-| 2026-08-04 | New services deploy as DaemonSets with kustomize images:/replacements: | All sovereignignite services (keymanager, libp2p-init, ipfs, trust, discovery, bootstrap) get DaemonSets under `kubernetes/sovereignite.io/` following the existing source/localized pattern with configurable image tags and field replacements. |
+| 2026-08-04 | New services deploy as DaemonSets with kustomize images:/replacements: | All sovereignite services (keymanager, libp2p-init, ipfs, trust, discovery, bootstrap) get DaemonSets under `kubernetes/sovereignite.io/` following the existing source/localized pattern with configurable image tags and field replacements. |
+| 2026-08-04 | Migrate archive sources, not rewrite | The tarball contains the full working Go source tree (146 files). Strategy: extract, adjust module paths (`sovereignite.net` → `github.com/sovereignite/sovereignite`), fix API diffs, test. |
 
 ## Open Questions
 

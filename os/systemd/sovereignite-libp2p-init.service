@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+[Unit]
+Description=Sovereignite libp2p identity initialization service
+Requires=sovereignite-keymanager.service
+After=sovereignite-keymanager.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+UMask=0077
+RuntimeDirectory=sovereignite/identity
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=no
+StateDirectory=sovereignite/identity
+StateDirectoryMode=0700
+ExecStartPre=/usr/bin/test -x /usr/bin/sovereignite-libp2p-init
+ExecStart=/usr/bin/sovereignite-libp2p-init
+ExecStartPost=/opt/sovereignite/bin/sovereignite-wait-ready identity /run/sovereignite/identity/endpoint.json 60
+TimeoutStartSec=75s
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=strict
+ReadWritePaths=/run/sovereignite/identity /var/lib/sovereignite/identity
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=sovereignite-pre-kubernetes.target

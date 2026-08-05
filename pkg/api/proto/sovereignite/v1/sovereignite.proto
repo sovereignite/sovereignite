@@ -1,0 +1,237 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//
+// Copyright (C) 2026 Sovereignite contributors
+
+syntax = "proto3";
+
+package sovereignite.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sovereignite/sovereignite/pkg/api/proto/sovereignite/v1;sovereignitev1";
+
+service Identity {
+  rpc GetIdentity(google.protobuf.Empty) returns (IdentityResponse);
+  rpc GetTrustDomain(google.protobuf.Empty) returns (TrustDomainResponse);
+}
+
+service Discovery {
+  rpc StartBroadcast(StartBroadcastRequest) returns (google.protobuf.Empty);
+  rpc StopBroadcast(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc ListDevices(google.protobuf.Empty) returns (ListDevicesResponse);
+}
+
+service Trust {
+  rpc AdoptDevice(AdoptDeviceRequest) returns (AdoptDeviceResponse);
+  rpc GetTrustRelationships(google.protobuf.Empty) returns (TrustRelationshipsResponse);
+  rpc RevokeTrust(RevokeTrustRequest) returns (google.protobuf.Empty);
+  rpc Federate(FederateRequest) returns (FederateResponse);
+}
+
+service Bootstrap {
+  rpc GetStatus(google.protobuf.Empty) returns (BootstrapStatus);
+  rpc StartBootstrap(StartBootstrapRequest) returns (google.protobuf.Empty);
+}
+
+service KeyValidation {
+  rpc ValidateKey(ValidateKeyRequest) returns (ValidateKeyResponse);
+  rpc IssueJWT(IssueJWTRequest) returns (IssueJWTResponse);
+}
+
+enum PublicKeyType {
+  PUBLIC_KEY_TYPE_UNSPECIFIED = 0;
+  PUBLIC_KEY_TYPE_RSA = 1;
+  PUBLIC_KEY_TYPE_ED25519 = 2;
+  PUBLIC_KEY_TYPE_SECP256K1 = 3;
+  PUBLIC_KEY_TYPE_ECDSA = 4;
+}
+
+enum IdentityPhase {
+  IDENTITY_PHASE_UNSPECIFIED = 0;
+  IDENTITY_PHASE_PENDING = 1;
+  IDENTITY_PHASE_ACTIVE = 2;
+  IDENTITY_PHASE_REVOKED = 3;
+}
+
+enum ConditionStatus {
+  CONDITION_STATUS_UNSPECIFIED = 0;
+  CONDITION_STATUS_TRUE = 1;
+  CONDITION_STATUS_FALSE = 2;
+  CONDITION_STATUS_UNKNOWN = 3;
+}
+
+enum AdoptionState {
+  ADOPTION_STATE_UNSPECIFIED = 0;
+  ADOPTION_STATE_UNADOPTED = 1;
+  ADOPTION_STATE_ADOPTED = 2;
+}
+
+enum BootstrapState {
+  BOOTSTRAP_STATE_UNSPECIFIED = 0;
+  BOOTSTRAP_STATE_NOT_STARTED = 1;
+  BOOTSTRAP_STATE_IN_PROGRESS = 2;
+  BOOTSTRAP_STATE_COMPLETE = 3;
+  BOOTSTRAP_STATE_FAILED = 4;
+}
+
+// PublicKey contains public device-key material only. tpm_handle is the sole
+// reference to the corresponding non-exportable TPM private material.
+message PublicKey {
+  PublicKeyType type = 1;
+  string public_raw_base64 = 2;
+  string tpm_handle = 3;
+}
+
+// PresentedPublicKey contains public credential material only.
+message PresentedPublicKey {
+  PublicKeyType type = 1;
+  string public_raw_base64 = 2;
+}
+
+// CertificateChain contains public X.509 certificate PEM blocks only.
+// Implementations must reject private-key and non-certificate PEM blocks.
+message CertificateChain {
+  repeated string certificates_pem = 1;
+}
+
+message X509SVID {
+  CertificateChain certificate_chain = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message IdentityCondition {
+  string type = 1;
+  ConditionStatus status = 2;
+  string reason = 3;
+  string message = 4;
+  google.protobuf.Timestamp last_transition_time = 5;
+}
+
+message DeviceIdentity {
+  string peer_id = 1;
+  repeated string multiaddrs = 2;
+  repeated PublicKey public_keys = 3;
+  IdentityPhase phase = 4;
+  uint64 peer_record_sequence = 5;
+  string spiffe_id = 6;
+  X509SVID x509_svid = 7;
+  repeated IdentityCondition conditions = 8;
+  int64 observed_generation = 9;
+}
+
+message IdentityResponse {
+  DeviceIdentity identity = 1;
+}
+
+message TrustDomainResponse {
+  string trust_domain = 1;
+}
+
+// StartBroadcastRequest intentionally has no caller-controlled broadcast
+// parameters; the service advertises its configured public identity.
+message StartBroadcastRequest {}
+
+message DiscoveredDevice {
+  DeviceIdentity identity = 1;
+  AdoptionState adoption_state = 2;
+  google.protobuf.Timestamp last_seen_at = 3;
+}
+
+message ListDevicesResponse {
+  repeated DiscoveredDevice devices = 1;
+}
+
+message TrustRelationship {
+  string relationship_id = 1;
+  string peer_id = 2;
+  string spiffe_id = 3;
+  string trust_domain = 4;
+  google.protobuf.Timestamp established_at = 5;
+}
+
+message Federation {
+  string remote_trust_domain = 1;
+  google.protobuf.Timestamp established_at = 2;
+}
+
+// The required mTLS transport binds the authenticated adopter identity and
+// proof of key possession. peer_id selects the discovered target device.
+message AdoptDeviceRequest {
+  string peer_id = 1;
+}
+
+message AdoptDeviceResponse {
+  AdoptionState state = 1;
+  TrustRelationship relationship = 2;
+}
+
+message TrustRelationshipsResponse {
+  repeated TrustRelationship relationships = 1;
+  repeated Federation federations = 2;
+}
+
+message RevokeTrustRequest {
+  string relationship_id = 1;
+}
+
+message FederateRequest {
+  string remote_trust_domain = 1;
+}
+
+message FederateResponse {
+  Federation federation = 1;
+}
+
+message BootstrapStatus {
+  BootstrapState state = 1;
+  string current_step = 2;
+  string message = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+// StartBootstrapRequest intentionally has no caller-controlled bootstrap
+// parameters; bootstrap consumes the service's validated local configuration.
+message StartBootstrapRequest {}
+
+message PresentedCredential {
+  oneof credential {
+    PresentedPublicKey public_key = 1;
+    CertificateChain certificate_chain = 2;
+  }
+}
+
+// A presented credential must be bound to the authenticated mTLS session and
+// its proof of possession; public material alone is not authorization.
+message ValidateKeyRequest {
+  PresentedCredential credential = 1;
+}
+
+message ValidatedIdentity {
+  string subject = 1;
+  string peer_id = 2;
+  string spiffe_id = 3;
+  string trust_domain = 4;
+  PresentedPublicKey public_key = 5;
+  CertificateChain certificate_chain = 6;
+  google.protobuf.Timestamp certificate_expires_at = 7;
+}
+
+message ValidateKeyResponse {
+  bool valid = 1;
+  ValidatedIdentity identity = 2;
+}
+
+// The service revalidates this credential and its mTLS binding before asking
+// Dex to issue a token.
+message IssueJWTRequest {
+  PresentedCredential credential = 1;
+  string audience = 2;
+}
+
+// token is opaque to callers; Dex owns its claims and encoding.
+message IssueJWTResponse {
+  string token = 1;
+  google.protobuf.Timestamp expires_at = 2;
+  string issuer = 3;
+}

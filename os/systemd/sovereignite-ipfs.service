@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+[Unit]
+Description=Sovereignite IPFS and IPNS service
+Requires=sovereignite-libp2p-init.service
+After=sovereignite-libp2p-init.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+UMask=0077
+Environment=HOME=/var/lib/sovereignite/ipfs
+RuntimeDirectory=sovereignite/ipfs
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=no
+StateDirectory=sovereignite/ipfs
+StateDirectoryMode=0700
+ExecStartPre=/usr/bin/test -x /usr/bin/sovereignite-ipfs
+ExecStart=/usr/bin/sovereignite-ipfs
+ExecStartPost=/opt/sovereignite/bin/sovereignite-wait-ready ipfs /run/sovereignite/ipfs/ready.json 60
+TimeoutStartSec=75s
+Restart=on-failure
+RestartSec=5s
+CapabilityBoundingSet=
+AmbientCapabilities=
+DevicePolicy=closed
+InaccessiblePaths=-/dev/tpm0 -/dev/tpmrm0
+InaccessiblePaths=-/etc/kubernetes -/var/lib/kubelet
+InaccessiblePaths=-/run/sovereignite/bootstrap -/run/sovereignite/discovery
+InaccessiblePaths=-/run/sovereignite/identity -/run/sovereignite/keymanager
+InaccessiblePaths=-/run/sovereignite/trust
+InaccessiblePaths=-/var/lib/sovereignite/bootstrap -/var/lib/sovereignite/identity
+InaccessiblePaths=-/var/lib/sovereignite/keymanager
+InaccessiblePaths=-/var/lib/sovereignite/trust
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/sovereignite/public
+ReadWritePaths=/run/sovereignite/ipfs /var/lib/sovereignite/ipfs
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=sovereignite-pre-kubernetes.target

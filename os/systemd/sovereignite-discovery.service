@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+[Unit]
+Description=Sovereignite mDNS and BLE discovery service
+Requires=sovereignite-libp2p-init.service sovereignite-trust.service
+After=sovereignite-libp2p-init.service sovereignite-trust.service
+Wants=bluetooth.target
+After=bluetooth.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+UMask=0077
+EnvironmentFile=/run/sovereignite/discovery/config.env
+ExecStartPre=/usr/bin/test -s /run/sovereignite/discovery/config.env
+ExecStartPre=/usr/bin/test -x /usr/bin/sovereignite-discovery
+ExecStart=/usr/bin/sovereignite-discovery \
+  --device-id=${SOVEREIGNITE_DEVICE_ID} \
+  --trust-domain=${SOVEREIGNITE_TRUST_DOMAIN} \
+  --adoption-state=${SOVEREIGNITE_ADOPTION_STATE} \
+  --service-port=${SOVEREIGNITE_SERVICE_PORT} \
+  --ble-service-uuid=${SOVEREIGNITE_BLE_SERVICE_UUID} \
+  --bluez-adapter=${SOVEREIGNITE_BLUEZ_ADAPTER}
+ExecStartPost=/opt/sovereignite/bin/sovereignite-wait-ready discovery /run/sovereignite/discovery/ready.json 60
+TimeoutStartSec=75s
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=strict
+ReadWritePaths=/run/sovereignite/discovery
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=sovereignite-pre-kubernetes.target
