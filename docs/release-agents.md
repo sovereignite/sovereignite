@@ -1,75 +1,75 @@
-# Release Agent Team — ADK/A2A Primitives
+# The Ship Crew — ADK/A2A Primitives
 
 ## Overview
 
-The Sovereignite release task agent team is defined in `internal/releaseagent/`
-using ADK and A2A framework primitives directly. No custom runtime, scheduler,
-lane runner, static workflow platform, delegate CLI, bespoke permission layer,
-or Nix-coupled harness is introduced.
+The Sovereignite software team is defined in `internal/shipcrew/` using ADK and
+A2A framework primitives directly. No custom runtime, scheduler, lane runner,
+static workflow platform, delegate CLI, bespoke permission layer, or
+Nix-coupled harness is introduced.
+
+We ship.
+
+## The Crew
+
+| Agent | Role | Mode | What they do |
+|---|---|---|---|
+| **`skipper`** | Coordinator | root | Runs the ship, delegates, keeps everyone on course |
+| **`scout`** | Intake | `task` | Reads the issue, figures out what needs doing, can ask questions |
+| **`builder`** | Implementation | `single_turn` | Does the work. Writes the code. Ships it. |
+| **`prover`** | Validation | `single_turn` | Proves it works. Tests, lint, typecheck. No hand-waving. |
+| **`critic`** | Review | `single_turn` | Catches what the builder missed. Honest feedback. |
+| **`herald`** | Status/Handoff | `single_turn` | Reports the outcome. Posts the summary. Everyone knows. |
+| **`retro`** | Self-improvement | `single_turn` | Runs the retrospective. Finds what broke. Proposes fixes with receipts. |
 
 ## ADK Primitives Used
 
-### LlmAgent with Collaboration Modes
+### Collaboration Modes
 
-Each agent is an `llmagent.LlmAgent` with a collaboration mode:
-
-| Agent | Mode | Behavior |
-|---|---|---|
-| `release_coordinator` | (none, root) | Receives task requests, delegates to subagents |
-| `issue_intake_agent` | `task` | May ask clarifying questions, auto-returns to coordinator |
-| `implementation_agent` | `single_turn` | Executes one turn, returns automatically |
-| `validation_agent` | `single_turn` | Executes one turn, returns automatically |
-| `review_agent` | `single_turn` | Executes one turn, returns automatically |
-| `status_handoff_agent` | `single_turn` | Executes one turn, returns automatically |
-| `improvement_reviewer_agent` | `single_turn` | Executes one turn, returns automatically |
-
-The `task` mode on `issue_intake_agent` allows it to ask the user clarifying
-questions before returning. The `single_turn` mode on other agents enables
-parallel execution and automatic return to the coordinator.
+- `task` mode on `scout` — may ask the user clarifying questions, auto-returns
+  to skipper when done.
+- `single_turn` on everyone else — executes one turn, returns automatically,
+  can run in parallel.
 
 ### Delegation
 
-When the coordinator declares `SubAgents`, ADK automatically generates a
-delegation tool for each subagent, named after the subagent itself. The
-coordinator uses these tools to route work — no custom lane runner or scheduler
-is needed.
+When the skipper declares `SubAgents`, ADK automatically generates a delegation
+tool for each crew member, named after the member. The skipper uses these tools
+to route work — no custom lane runner or scheduler needed.
 
 ### Function Tools
 
-Each agent receives role-specific tools created with `functiontool.New`:
+Each crew member gets role-specific tools created with `functiontool.New`:
 
-- **Intake tools:** `read_github_issue`, `extract_acceptance_criteria`
-- **Implementation tools:** `read_file`, `write_file` (confirmation required)
-- **Validation tools:** `run_validation`
-- **Review tools:** `review_changes`
-- **Status tools:** `summarize_outcome`, `comment_on_task` (confirmation required)
-- **Improvement tools:** `analyze_run_outcomes`, `propose_improvement` (confirmation required)
+- **Scout:** `read_github_issue`, `extract_acceptance_criteria`
+- **Builder:** `read_file`, `write_file` (confirmation required)
+- **Prover:** `run_validation`
+- **Critic:** `review_changes`
+- **Herald:** `summarize_outcome`, `comment_on_task` (confirmation required)
+- **Retro:** `analyze_run_outcomes`, `propose_improvement` (confirmation required)
 
-Tools are ADK function tools, MCP toolsets, or direct API integrations. Agents
-do not call shell commands or orchestrate external executables.
+Tools are ADK function tools, MCP toolsets, or direct API integrations. Crew
+members do not call shell commands or orchestrate external executables.
 
 ### Tool Confirmation (Human Approval Gates)
 
 Tools that mutate state or post comments use `RequireConfirmation: true`:
 
-- `write_file` — requires human confirmation before writing
-- `comment_on_task` — requires human confirmation before posting
-- `propose_improvement` — requires human confirmation before filing
+- `write_file` — builder needs human sign-off before writing
+- `comment_on_task` — herald needs human sign-off before posting
+- `propose_improvement` — retro needs human sign-off before filing
 
-This implements human-in-the-loop gates through ADK's tool confirmation
-mechanism, not through a custom approval layer.
+This is ADK's tool confirmation mechanism, not a custom approval layer.
 
-### A2A Remote Workers
+### A2A Remote Crew Members
 
 Optional remote agents for implementation, validation, or specialist work are
-exposed and consumed through A2A using `remoteagent.NewA2A`. Each remote worker
-is described by a name, description, and agent card source URL. Container
+exposed and consumed through A2A using `remoteagent.NewA2A`. Container
 lifecycle, workspace allocation, image builds, and mounts remain host
-infrastructure concerns outside the agent team.
+infrastructure concerns outside the crew.
 
-## Responsibilities Outside the Agent Team
+## Responsibilities Outside the Crew
 
-The following are host infrastructure concerns, not agent responsibilities:
+These are host infrastructure concerns, not crew responsibilities:
 
 - Container lifecycle (create, start, stop, destroy)
 - Worktree allocation and cleanup
@@ -85,38 +85,33 @@ The following are host infrastructure concerns, not agent responsibilities:
 
 Self-improvement is modeled as explicit, auditable follow-up task proposals:
 
-1. After a release task run completes, the `improvement_reviewer_agent` analyzes
-   the run outcome using `analyze_run_outcomes`.
-2. If defects are found in prompts, tools, workflows, or evaluations, the agent
-   creates an `ImprovementProposal` with:
-   - `RunID` — the run that triggered the proposal
-   - `Category` — one of: prompt, tool, workflow, evaluation
-   - `Defect` — the identified defect or gap
-   - `Evidence` — evidence from the run
-   - `Proposal` — the narrow recommended change
-   - `IssueTitle` — suggested GitHub issue title
+1. After a run completes, **retro** analyzes the outcome using
+   `analyze_run_outcomes`.
+2. If defects are found in prompts, tools, workflows, or evaluations, retro
+   creates an `ImprovementProposal` with evidence.
 3. The `propose_improvement` tool requires human confirmation before filing.
 4. Filed proposals go through the normal issue → branch → PR → validation →
    human review flow.
 
-Agents cannot silently rewrite their own instructions, tools, permissions,
-workflow definitions, or evaluation criteria. Self-improvement proposals cannot
-escalate privileges, bypass branch protection, or bypass human approval.
+Crew members cannot silently rewrite their own instructions, tools,
+permissions, workflow definitions, or evaluation criteria. Self-improvement
+proposals cannot escalate privileges, bypass branch protection, or bypass human
+approval.
 
 ## Usage
 
 ```go
 import (
-    "github.com/sovereignite/sovereignite/internal/releaseagent"
+    "github.com/sovereignite/sovereignite/internal/shipcrew"
     "google.golang.org/genai"
 )
 
-team, err := releaseagent.NewTeam(ctx, releaseagent.Config{
+skipper, err := shipcrew.NewCrew(ctx, shipcrew.CrewConfig{
     ModelName:          "gemini-2.0-flash",
     GeminiClientConfig: &genai.ClientConfig{APIKey: "..."},
-    A2ARemoteWorkers: []releaseagent.A2ARemoteWorker{
+    RemoteCrewMembers: []shipcrew.RemoteCrewMember{
         {
-            Name:            "remote_validator",
+            Name:            "remote_prover",
             Description:     "Remote validation worker",
             AgentCardSource: "http://localhost:9001",
         },
@@ -128,12 +123,12 @@ team, err := releaseagent.NewTeam(ctx, releaseagent.Config{
 
 ```bash
 # Short mode (no API key required)
-go test ./internal/releaseagent/... -short -v
+go test ./internal/shipcrew/... -short -v
 
 # Full tests (requires GOOGLE_API_KEY)
-go test ./internal/releaseagent/... -v
+go test ./internal/shipcrew/... -v
 ```
 
-Full team creation tests require a valid `GOOGLE_API_KEY` environment variable
+Full crew creation tests require a valid `GOOGLE_API_KEY` environment variable
 for the Gemini model backend. Without the key, `gemini.NewModel` returns:
 "api key is required for Google AI backend".

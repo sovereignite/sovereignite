@@ -1,18 +1,18 @@
-// Package releaseagent defines the Sovereignite release task agent team using
-// ADK and A2A framework primitives directly.
+// Package shipcrew defines the Sovereignite software team using ADK and A2A
+// framework primitives directly.
 //
-// The team is composed of a root coordinator and role-specific subagents.
-// Each agent is an ADK LlmAgent with a collaboration mode, role-specific
-// tools, and explicit delegation through the coordinator.
+// The crew is composed of a skipper and role-specific crew members. Each agent
+// is an ADK LlmAgent with a collaboration mode, role-specific tools, and
+// explicit delegation through the skipper.
 //
 // Agents do not receive merge or bypass authority. Agents do not call shell
 // commands or orchestrate external executables. Container lifecycle, worktree
 // allocation, image builds, and mounts are host infrastructure concerns
-// outside the agent team.
+// outside the crew.
 //
 // Recursive self-improvement is modeled as explicit, auditable follow-up task
 // proposals with evidence from the run that triggered them.
-package releaseagent
+package shipcrew
 
 import (
 	"context"
@@ -29,29 +29,28 @@ import (
 
 // Agent names used for delegation and identification.
 const (
-	CoordinatorName       = "release_coordinator"
-	IntakeAgentName       = "issue_intake_agent"
-	ImplementationName    = "implementation_agent"
-	ValidationName        = "validation_agent"
-	ReviewName            = "review_agent"
-	StatusHandoffName     = "status_handoff_agent"
-	ImprovementReviewerName = "improvement_reviewer_agent"
+	SkipperName   = "skipper"
+	ScoutName     = "scout"
+	BuilderName   = "builder"
+	ProverName    = "prover"
+	CriticName    = "critic"
+	HeraldName    = "herald"
+	RetroName     = "retro"
 )
 
 // ImprovementProposal represents a structured, auditable self-improvement
 // proposal with evidence from the run that triggered it. Proposals go through
 // the normal issue, branch, PR, validation, and human review flow.
 type ImprovementProposal struct {
-	RunID       string `json:"run_id"       jsonschema:"The run that triggered this proposal."`
-	Category    string `json:"category"     jsonschema:"One of: prompt, tool, workflow, evaluation."`
-	Defect      string `json:"defect"       jsonschema:"The identified defect or gap."`
-	Evidence    string `json:"evidence"     jsonschema:"Evidence from the run supporting this proposal."`
-	Proposal    string `json:"proposal"     jsonschema:"The narrow recommended change."`
-	IssueTitle  string `json:"issue_title"  jsonschema:"Suggested GitHub issue title for this proposal."`
+	RunID      string `json:"run_id"      jsonschema:"The run that triggered this proposal."`
+	Category   string `json:"category"    jsonschema:"One of: prompt, tool, workflow, evaluation."`
+	Defect     string `json:"defect"      jsonschema:"The identified defect or gap."`
+	Evidence   string `json:"evidence"    jsonschema:"Evidence from the run supporting this proposal."`
+	Proposal   string `json:"proposal"    jsonschema:"The narrow recommended change."`
+	IssueTitle string `json:"issue_title" jsonschema:"Suggested GitHub issue title for this proposal."`
 }
 
-// RunOutcomeSummary holds the outcome of a completed release task run for
-// analysis by the improvement reviewer.
+// RunOutcomeSummary holds the outcome of a completed run for analysis by retro.
 type RunOutcomeSummary struct {
 	RunID            string   `json:"run_id"`
 	TaskIssueNumber  int      `json:"task_issue_number"`
@@ -63,21 +62,21 @@ type RunOutcomeSummary struct {
 	Notes            []string `json:"notes,omitempty"`
 }
 
-// IssueData holds extracted issue information from the intake agent.
+// IssueData holds extracted issue information from the scout.
 type IssueData struct {
-	Number            int      `json:"number"`
-	Title             string   `json:"title"`
-	Constraints       []string `json:"constraints"`
+	Number             int      `json:"number"`
+	Title              string   `json:"title"`
+	Constraints        []string `json:"constraints"`
 	AcceptanceCriteria []string `json:"acceptance_criteria"`
 	OpenQuestions      []string `json:"open_questions"`
 	ExpectedOutputs    []string `json:"expected_outputs"`
 }
 
-// ValidationResult holds the output of a validation run.
+// ValidationResult holds the output of a validation run from the prover.
 type ValidationResult struct {
-	Passed   bool     `json:"passed"`
-	Checks   []Check  `json:"checks"`
-	Summary  string   `json:"summary"`
+	Passed  bool   `json:"passed"`
+	Checks  []Check `json:"checks"`
+	Summary string  `json:"summary"`
 }
 
 // Check is a single validation check result.
@@ -87,28 +86,28 @@ type Check struct {
 	Details string `json:"details,omitempty"`
 }
 
-// ReviewResult holds the output of a review pass.
+// ReviewResult holds the output of a review pass from the critic.
 type ReviewResult struct {
-	Approved       bool     `json:"approved"`
-	Risks          []string `json:"risks"`
-	MissingTests   []string `json:"missing_tests"`
+	Approved         bool     `json:"approved"`
+	Risks            []string `json:"risks"`
+	MissingTests     []string `json:"missing_tests"`
 	PolicyViolations []string `json:"policy_violations"`
-	Summary        string   `json:"summary"`
+	Summary          string   `json:"summary"`
 }
 
-// StatusReport holds the handoff summary.
+// StatusReport holds the handoff summary from the herald.
 type StatusReport struct {
-	IssueNumber    int    `json:"issue_number"`
-	Outcome        string `json:"outcome"`
-	ValidationPass bool   `json:"validation_pass"`
-	ReviewPass     bool   `json:"review_pass"`
+	IssueNumber    int      `json:"issue_number"`
+	Outcome        string   `json:"outcome"`
+	ValidationPass bool     `json:"validation_pass"`
+	ReviewPass     bool     `json:"review_pass"`
 	ResidualRisks  []string `json:"residual_risks,omitempty"`
-	Summary        string `json:"summary"`
+	Summary        string   `json:"summary"`
 }
 
 // --- Tool definitions ---
 
-func newIntakeTools() ([]tool.Tool, error) {
+func newScoutTools() ([]tool.Tool, error) {
 	readIssue, err := functiontool.New(functiontool.Config{
 		Name:        "read_github_issue",
 		Description: "Reads a GitHub issue by number and returns its title, body, labels, and comments.",
@@ -116,7 +115,7 @@ func newIntakeTools() ([]tool.Tool, error) {
 		IssueNumber int `json:"issue_number" jsonschema:"The GitHub issue number to read."`
 	}) (IssueData, error) {
 		// In production this calls the GitHub API via MCP toolset or direct
-		// integration. The agent team does not shell out to gh or curl.
+		// integration. The crew does not shell out to gh or curl.
 		return IssueData{
 			Number: args.IssueNumber,
 			Title:  "(issue title from GitHub API)",
@@ -141,7 +140,7 @@ func newIntakeTools() ([]tool.Tool, error) {
 	return []tool.Tool{readIssue, extractCriteria}, nil
 }
 
-func newImplementationTools() ([]tool.Tool, error) {
+func newBuilderTools() ([]tool.Tool, error) {
 	readFile, err := functiontool.New(functiontool.Config{
 		Name:        "read_file",
 		Description: "Reads the contents of a file at the given path within the repository.",
@@ -171,7 +170,7 @@ func newImplementationTools() ([]tool.Tool, error) {
 	return []tool.Tool{readFile, writeFile}, nil
 }
 
-func newValidationTools() ([]tool.Tool, error) {
+func newProverTools() ([]tool.Tool, error) {
 	runValidation, err := functiontool.New(functiontool.Config{
 		Name:        "run_validation",
 		Description: "Runs validation checks (lint, typecheck, targeted tests) and returns structured results.",
@@ -187,7 +186,7 @@ func newValidationTools() ([]tool.Tool, error) {
 	return []tool.Tool{runValidation}, nil
 }
 
-func newReviewTools() ([]tool.Tool, error) {
+func newCriticTools() ([]tool.Tool, error) {
 	reviewChanges, err := functiontool.New(functiontool.Config{
 		Name:        "review_changes",
 		Description: "Reviews staged or committed changes against the issue requirements.",
@@ -204,10 +203,10 @@ func newReviewTools() ([]tool.Tool, error) {
 	return []tool.Tool{reviewChanges}, nil
 }
 
-func newStatusHandoffTools() ([]tool.Tool, error) {
+func newHeraldTools() ([]tool.Tool, error) {
 	summarizeOutcome, err := functiontool.New(functiontool.Config{
 		Name:        "summarize_outcome",
-		Description: "Summarizes the outcome of a release task run including validation and review results.",
+		Description: "Summarizes the outcome of a run including validation and review results.",
 	}, func(_ agent.Context, args StatusReport) (string, error) {
 		return "", nil
 	})
@@ -220,9 +219,9 @@ func newStatusHandoffTools() ([]tool.Tool, error) {
 		Description:         "Posts a summary comment on a GitHub issue or PR. Requires human confirmation.",
 		RequireConfirmation: true,
 	}, func(_ agent.Context, args struct {
-		TargetType  string `json:"target_type"  jsonschema:"issue or pr."`
-		TargetNumber int   `json:"target_number" jsonschema:"The issue or PR number."`
-		Body        string `json:"body"          jsonschema:"The comment body."`
+		TargetType   string `json:"target_type"   jsonschema:"issue or pr."`
+		TargetNumber int    `json:"target_number" jsonschema:"The issue or PR number."`
+		Body         string `json:"body"          jsonschema:"The comment body."`
 	}) (string, error) {
 		return "commented", nil
 	})
@@ -233,7 +232,7 @@ func newStatusHandoffTools() ([]tool.Tool, error) {
 	return []tool.Tool{summarizeOutcome, commentOnTask}, nil
 }
 
-func newImprovementTools() ([]tool.Tool, error) {
+func newRetroTools() ([]tool.Tool, error) {
 	analyzeOutcomes, err := functiontool.New(functiontool.Config{
 		Name:        "analyze_run_outcomes",
 		Description: "Analyzes completed run outcomes to identify defects in prompts, tools, workflows, or evaluations.",
@@ -260,162 +259,162 @@ func newImprovementTools() ([]tool.Tool, error) {
 	return []tool.Tool{analyzeOutcomes, proposeImprovement}, nil
 }
 
-// --- Agent constructors ---
+// --- Crew construction ---
 
-// Config holds configuration for building the release agent team.
-type Config struct {
+// CrewConfig holds configuration for building the crew.
+type CrewConfig struct {
 	// ModelName is the ADK model identifier (e.g. "gemini-2.0-flash").
 	ModelName string
 
 	// GeminiClientConfig is the genai client configuration for the model.
 	GeminiClientConfig *genai.ClientConfig
 
-	// A2ARemoteWorkers lists optional remote agent endpoints for
-	// implementation, validation, or specialist workers exposed over A2A.
+	// RemoteCrewMembers lists optional remote agent endpoints for
+	// implementation, validation, or specialist work exposed over A2A.
 	// Each entry is a base URL serving an A2A agent card at
 	// /.well-known/agent-card.json.
-	A2ARemoteWorkers []A2ARemoteWorker
+	RemoteCrewMembers []RemoteCrewMember
 }
 
-// A2ARemoteWorker describes a remote agent available over A2A.
-type A2ARemoteWorker struct {
+// RemoteCrewMember describes a remote agent available over A2A.
+type RemoteCrewMember struct {
 	Name            string
 	Description     string
 	AgentCardSource string
 }
 
-// NewTeam builds the full release agent team and returns the root coordinator.
-// The team uses ADK collaboration modes, delegation, tool confirmation for
-// human approval gates, and optional A2A remote workers.
-func NewTeam(ctx context.Context, cfg Config) (agent.Agent, error) {
+// NewCrew builds the full crew and returns the skipper. The crew uses ADK
+// collaboration modes, delegation, tool confirmation for human approval gates,
+// and optional A2A remote crew members.
+func NewCrew(ctx context.Context, cfg CrewConfig) (agent.Agent, error) {
 	model, err := gemini.NewModel(ctx, cfg.ModelName, cfg.GeminiClientConfig)
 	if err != nil {
-		return nil, fmt.Errorf("releaseagent: failed to create model: %w", err)
+		return nil, fmt.Errorf("shipcrew: failed to create model: %w", err)
 	}
 
 	// Build role-specific tools.
-	intakeTools, err := newIntakeTools()
+	scoutTools, err := newScoutTools()
 	if err != nil {
 		return nil, err
 	}
-	implTools, err := newImplementationTools()
+	builderTools, err := newBuilderTools()
 	if err != nil {
 		return nil, err
 	}
-	validationTools, err := newValidationTools()
+	proverTools, err := newProverTools()
 	if err != nil {
 		return nil, err
 	}
-	reviewTools, err := newReviewTools()
+	criticTools, err := newCriticTools()
 	if err != nil {
 		return nil, err
 	}
-	statusTools, err := newStatusHandoffTools()
+	heraldTools, err := newHeraldTools()
 	if err != nil {
 		return nil, err
 	}
-	improvementTools, err := newImprovementTools()
+	retroTools, err := newRetroTools()
 	if err != nil {
 		return nil, err
 	}
 
-	// Issue intake agent: task mode — may ask clarifying questions,
-	// automatically returns to coordinator when done.
-	intakeAgent, err := llmagent.New(llmagent.Config{
-		Name:        IntakeAgentName,
+	// Scout: task mode — may ask clarifying questions,
+	// automatically returns to skipper when done.
+	scout, err := llmagent.New(llmagent.Config{
+		Name:        ScoutName,
 		Model:       model,
 		Mode:        llmagent.ModeTask,
 		Description: "Reads assigned GitHub issues and extracts constraints, acceptance criteria, open questions, and expected outputs.",
-		Instruction: `You are the issue intake agent. Your job is to:
+		Instruction: `You are the scout. Your job is to:
 1. Read the assigned GitHub issue using read_github_issue.
 2. Extract constraints, acceptance criteria, open questions, and expected outputs using extract_acceptance_criteria.
-3. Return a structured IssueData summary to the coordinator.
+3. Return a structured IssueData summary to the skipper.
 Do not modify any files. Do not run any commands.`,
-		Tools: intakeTools,
+		Tools: scoutTools,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("releaseagent: intake agent: %w", err)
+		return nil, fmt.Errorf("shipcrew: scout: %w", err)
 	}
 
-	// Implementation agent: single_turn mode — executes one turn and
+	// Builder: single_turn mode — executes one turn and
 	// returns automatically. Can run in parallel with peer agents.
-	implementationAgent, err := llmagent.New(llmagent.Config{
-		Name:        ImplementationName,
+	builder, err := llmagent.New(llmagent.Config{
+		Name:        BuilderName,
 		Model:       model,
 		Mode:        llmagent.ModeSingleTurn,
 		Description: "Performs scoped implementation work using only exposed ADK tools, MCP toolsets, or direct API capabilities.",
-		Instruction: `You are the implementation agent. Your job is to:
-1. Read the issue requirements passed by the coordinator.
+		Instruction: `You are the builder. Your job is to:
+1. Read the issue requirements passed by the skipper.
 2. Read relevant files using read_file.
 3. Make scoped changes using write_file (requires human confirmation).
 4. Return a summary of changes made.
 You must not call shell commands or orchestrate external executables.
 You must not merge pull requests or bypass branch protection.`,
-		Tools: implTools,
+		Tools: builderTools,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("releaseagent: implementation agent: %w", err)
+		return nil, fmt.Errorf("shipcrew: builder: %w", err)
 	}
 
-	// Validation agent: single_turn mode.
-	validationAgent, err := llmagent.New(llmagent.Config{
-		Name:        ValidationName,
+	// Prover: single_turn mode.
+	prover, err := llmagent.New(llmagent.Config{
+		Name:        ProverName,
 		Model:       model,
 		Mode:        llmagent.ModeSingleTurn,
 		Description: "Validates work through approved ADK tools, MCP toolsets, or direct API integrations and reports results.",
-		Instruction: `You are the validation agent. Your job is to:
+		Instruction: `You are the prover. Your job is to:
 1. Run validation checks using run_validation (lint, typecheck, tests).
 2. Return a structured ValidationResult with pass/fail status for each check.
 You must not call shell commands or orchestrate external executables.
 Validation runs through approved ADK tools and API integrations only.`,
-		Tools: validationTools,
+		Tools: proverTools,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("releaseagent: validation agent: %w", err)
+		return nil, fmt.Errorf("shipcrew: prover: %w", err)
 	}
 
-	// Review agent: single_turn mode.
-	reviewAgent, err := llmagent.New(llmagent.Config{
-		Name:        ReviewName,
+	// Critic: single_turn mode.
+	critic, err := llmagent.New(llmagent.Config{
+		Name:        CriticName,
 		Model:       model,
 		Mode:        llmagent.ModeSingleTurn,
 		Description: "Reviews changes against the issue, regressions, missing tests, risks, and policy boundaries.",
-		Instruction: `You are the review agent. Your job is to:
+		Instruction: `You are the critic. Your job is to:
 1. Review the changes against the issue requirements using review_changes.
 2. Check for regressions, missing tests, risks, and policy violations.
 3. Return a structured ReviewResult.
 You must not approve or merge pull requests. Final approval and merge remain human-controlled.`,
-		Tools: reviewTools,
+		Tools: criticTools,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("releaseagent: review agent: %w", err)
+		return nil, fmt.Errorf("shipcrew: critic: %w", err)
 	}
 
-	// Status handoff agent: single_turn mode.
-	statusAgent, err := llmagent.New(llmagent.Config{
-		Name:        StatusHandoffName,
+	// Herald: single_turn mode.
+	herald, err := llmagent.New(llmagent.Config{
+		Name:        HeraldName,
 		Model:       model,
 		Mode:        llmagent.ModeSingleTurn,
 		Description: "Summarizes outcomes, validation, residual risks, and comments on tasks or PRs when appropriate.",
-		Instruction: `You are the status handoff agent. Your job is to:
+		Instruction: `You are the herald. Your job is to:
 1. Summarize the run outcome using summarize_outcome.
 2. Post a summary comment on the GitHub issue or PR using comment_on_task (requires human confirmation).
-3. Return the StatusReport to the coordinator.
+3. Return the StatusReport to the skipper.
 Do not merge or approve PRs.`,
-		Tools: statusTools,
+		Tools: heraldTools,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("releaseagent: status handoff agent: %w", err)
+		return nil, fmt.Errorf("shipcrew: herald: %w", err)
 	}
 
-	// Improvement reviewer agent: single_turn mode. Reviews completed runs
+	// Retro: single_turn mode. Reviews completed runs
 	// and proposes evidence-backed follow-up tasks.
-	improvementAgent, err := llmagent.New(llmagent.Config{
-		Name:        ImprovementReviewerName,
+	retro, err := llmagent.New(llmagent.Config{
+		Name:        RetroName,
 		Model:       model,
 		Mode:        llmagent.ModeSingleTurn,
 		Description: "Reviews completed runs, identifies defects in prompts/tools/workflows/evaluations, and proposes evidence-backed follow-up tasks.",
-		Instruction: `You are the improvement reviewer agent. Your job is to:
+		Instruction: `You are the retro. Your job is to:
 1. Analyze the completed run outcome using analyze_run_outcomes.
 2. Identify defects in prompts, tools, workflows, or evaluations.
 3. Create an ImprovementProposal with evidence using propose_improvement (requires human confirmation).
@@ -424,56 +423,56 @@ Improvement proposals must:
 - Propose a narrow, specific change.
 - Be filed as normal tracked tasks through the issue/branch/PR flow.
 You must not silently modify agent instructions, tools, permissions, or workflow definitions.`,
-		Tools: improvementTools,
+		Tools: retroTools,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("releaseagent: improvement agent: %w", err)
+		return nil, fmt.Errorf("shipcrew: retro: %w", err)
 	}
 
-	// Collect subagents. Remote A2A workers are added as subagents when
-	// configured, enabling distribution or isolation for implementation,
-	// validation, or specialist work.
+	// Collect subagents. Remote A2A crew members are added as subagents
+	// when configured, enabling distribution or isolation for
+	// implementation, validation, or specialist work.
 	subAgents := []agent.Agent{
-		intakeAgent,
-		implementationAgent,
-		validationAgent,
-		reviewAgent,
-		statusAgent,
-		improvementAgent,
+		scout,
+		builder,
+		prover,
+		critic,
+		herald,
+		retro,
 	}
 
-	for _, rw := range cfg.A2ARemoteWorkers {
+	for _, rw := range cfg.RemoteCrewMembers {
 		remote, err := remoteagent.NewA2A(remoteagent.A2AConfig{
 			Name:            rw.Name,
 			Description:     rw.Description,
 			AgentCardSource: rw.AgentCardSource,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("releaseagent: remote worker %q: %w", rw.Name, err)
+			return nil, fmt.Errorf("shipcrew: remote crew member %q: %w", rw.Name, err)
 		}
 		subAgents = append(subAgents, remote)
 	}
 
-	// Root coordinator agent: receives task requests, delegates to role
-	// agents, tracks handoffs, and keeps human-controlled gates explicit.
+	// Skipper: root agent that receives task requests, delegates to crew
+	// members, tracks handoffs, and keeps human-controlled gates explicit.
 	// ADK auto-generates delegation tools named after each subagent.
-	coordinator, err := llmagent.New(llmagent.Config{
-		Name:  CoordinatorName,
+	skipper, err := llmagent.New(llmagent.Config{
+		Name:  SkipperName,
 		Model: model,
-		Description: `Root coordinator for Sovereignite release task work.
-Receives task requests, delegates to role-specific agents, tracks handoffs,
+		Description: `Skipper of the Sovereignite crew.
+Receives task requests, delegates to crew members, tracks handoffs,
 and keeps human-controlled gates explicit.`,
-		Instruction: `You are the release coordinator for Sovereignite. Your job is to:
+		Instruction: `You are the skipper. Your job is to:
 1. Receive a task request (GitHub issue number).
-2. Delegate to issue_intake_agent to read and extract requirements.
-3. Delegate to implementation_agent to perform scoped changes.
-4. Delegate to validation_agent to validate the work.
-5. Delegate to review_agent to review changes.
-6. Delegate to status_handoff_agent to summarize and comment.
-7. Delegate to improvement_reviewer_agent to analyze the run and propose improvements.
+2. Delegate to the scout to read and extract requirements.
+3. Delegate to the builder to perform scoped changes.
+4. Delegate to the prover to validate the work.
+5. Delegate to the critic to review changes.
+6. Delegate to the herald to summarize and comment.
+7. Delegate to retro to analyze the run and propose improvements.
 
 Rules:
-- Use delegation tools to route work to subagents. Do not hardcode lanes.
+- Use delegation tools to route work to crew members. Do not hardcode lanes.
 - Human approval gates are enforced through tool confirmation on write_file and comment_on_task.
 - You must not merge pull requests or bypass branch protection.
 - You must not call shell commands or orchestrate external executables.
@@ -482,8 +481,8 @@ Rules:
 		SubAgents: subAgents,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("releaseagent: coordinator: %w", err)
+		return nil, fmt.Errorf("shipcrew: skipper: %w", err)
 	}
 
-	return coordinator, nil
+	return skipper, nil
 }

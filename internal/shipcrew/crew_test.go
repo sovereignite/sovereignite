@@ -1,4 +1,4 @@
-package releaseagent
+package shipcrew
 
 import (
 	"context"
@@ -8,56 +8,56 @@ import (
 	"google.golang.org/genai"
 )
 
-func TestNewTeam_CreatesCoordinator(t *testing.T) {
+func TestNewCrew_CreatesSkipper(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test that requires GOOGLE_API_KEY in short mode")
 	}
 	ctx := context.Background()
 
-	team, err := NewTeam(ctx, Config{
+	crew, err := NewCrew(ctx, CrewConfig{
 		ModelName:          "gemini-2.0-flash",
 		GeminiClientConfig: &genai.ClientConfig{},
 	})
 	if err != nil {
-		t.Fatalf("NewTeam failed: %v", err)
+		t.Fatalf("NewCrew failed: %v", err)
 	}
 
-	if team.Name() != CoordinatorName {
-		t.Errorf("coordinator name = %q, want %q", team.Name(), CoordinatorName)
+	if crew.Name() != SkipperName {
+		t.Errorf("skipper name = %q, want %q", crew.Name(), SkipperName)
 	}
 }
 
-func TestNewTeam_WithRemoteWorker(t *testing.T) {
+func TestNewCrew_WithRemoteMember(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test that requires GOOGLE_API_KEY in short mode")
 	}
 	ctx := context.Background()
 
-	team, err := NewTeam(ctx, Config{
+	crew, err := NewCrew(ctx, CrewConfig{
 		ModelName:          "gemini-2.0-flash",
 		GeminiClientConfig: &genai.ClientConfig{},
-		A2ARemoteWorkers: []A2ARemoteWorker{
+		RemoteCrewMembers: []RemoteCrewMember{
 			{
-				Name:            "remote_impl",
-				Description:     "Remote implementation worker",
+				Name:            "remote_builder",
+				Description:     "Remote builder",
 				AgentCardSource: "http://localhost:9001",
 			},
 		},
 	})
 	if err != nil {
-		t.Fatalf("NewTeam with remote worker failed: %v", err)
+		t.Fatalf("NewCrew with remote member failed: %v", err)
 	}
 
-	if team.Name() != CoordinatorName {
-		t.Errorf("coordinator name = %q, want %q", team.Name(), CoordinatorName)
+	if crew.Name() != SkipperName {
+		t.Errorf("skipper name = %q, want %q", crew.Name(), SkipperName)
 	}
 }
 
-func TestNewTeam_InvalidModel(t *testing.T) {
+func TestNewCrew_InvalidModel(t *testing.T) {
 	ctx := context.Background()
 
-	_, err := NewTeam(ctx, Config{
-		ModelName:          "", // empty model name
+	_, err := NewCrew(ctx, CrewConfig{
+		ModelName:          "",
 		GeminiClientConfig: nil,
 	})
 	if err == nil {
@@ -70,12 +70,12 @@ func TestToolConstructors(t *testing.T) {
 		name    string
 		builder func() ([]tool.Tool, error)
 	}{
-		{"intakeTools", newIntakeTools},
-		{"implementationTools", newImplementationTools},
-		{"validationTools", newValidationTools},
-		{"reviewTools", newReviewTools},
-		{"statusHandoffTools", newStatusHandoffTools},
-		{"improvementTools", newImprovementTools},
+		{"scoutTools", newScoutTools},
+		{"builderTools", newBuilderTools},
+		{"proverTools", newProverTools},
+		{"criticTools", newCriticTools},
+		{"heraldTools", newHeraldTools},
+		{"retroTools", newRetroTools},
 	}
 
 	for _, tt := range tests {
@@ -93,13 +93,13 @@ func TestToolConstructors(t *testing.T) {
 
 func TestAgentNames(t *testing.T) {
 	names := []string{
-		CoordinatorName,
-		IntakeAgentName,
-		ImplementationName,
-		ValidationName,
-		ReviewName,
-		StatusHandoffName,
-		ImprovementReviewerName,
+		SkipperName,
+		ScoutName,
+		BuilderName,
+		ProverName,
+		CriticName,
+		HeraldName,
+		RetroName,
 	}
 
 	seen := make(map[string]bool)
@@ -134,5 +134,3 @@ func TestImprovementProposalStructure(t *testing.T) {
 		t.Error("Evidence should not be empty")
 	}
 }
-
-
