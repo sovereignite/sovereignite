@@ -319,6 +319,7 @@ for configurability.
 | 2026-08-04 | Flake updated with proto tooling | Added `protobuf`, `protoc-gen-go`, `protoc-gen-go-grpc` to nix dev shell. |
 | 2026-08-04 | .ko.yaml created | Root `.ko.yaml` with builds for all 7 services (fedora:44, linux/amd64, CGO_ENABLED=1, ldflags -s -w). |
 | 2026-08-04 | Kustomize DaemonSets created | 7 services: keymanager, libp2p-init, ipfs, trust, discovery, bootstrap, keyvalidation. Each with source/ and localized/, images transformer at top, init container dependency chain, TPM/DBus/containerd volume mounts. All source kustomizations validate. |
+| 2026-08-04 | Container images built via ko | All 7 services built from fedora:44 base (linux/amd64). Local podman storage via `DOCKER_HOST=unix:///run/user/1000/podman/podman.sock`. ~200MB each. |
 
 ## Decisions
 
