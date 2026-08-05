@@ -6,11 +6,6 @@ on:
       build:
         required: true
         type: string
-        description: ko build ID from .ko.yaml
-      paths:
-        required: false
-        type: string
-        description: Comma-separated path filters for trigger
 
 permissions:
   contents: read
@@ -31,4 +26,4 @@ jobs:
       - name: Build and push
         env:
           KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sovereignite
-        run: ko build --bare --tags ${{ github.ref_name }} ./cmd/${{ inputs.build }}
+        run: ko build --tags ${{ github.ref_name }} ./cmd/${{ inputs.build }}
