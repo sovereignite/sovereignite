@@ -7,6 +7,7 @@ on:
       - 'cmd/keymanager/**'
       - 'internal/keymanager/**'
       - 'internal/tpm/**'
+      - '.github/workflows/publish-keymanager.yaml'
       - 'go.mod'
       - 'go.sum'
   workflow_dispatch:
