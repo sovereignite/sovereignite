@@ -17,6 +17,7 @@
 ```
 cmd/                          Service entry points
 internal/                     Domain packages
+internal/releaseworkflow/      ADK/A2A release task agent-team assembly
 pkg/api/proto/sovereignite/v1 Protobuf/gRPC API
 kubernetes/sovereignite.io/   DaemonSet kustomizations
 os/systemd/                   systemd unit files

@@ -65,4 +65,5 @@ records, and durable publication state.
 - [Build](docs/build.md)
 - [Kubernetes](docs/kubernetes.md)
 - [CI/CD](docs/cicd.md)
+- [Release Task Workflows](docs/release-task-workflows.md)
 - [Repository Structure](docs/structure.md)
