@@ -34,7 +34,8 @@ jobs:
         env:
           KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sovereignite
         run: |
-          DIGEST=$(ko build --tags ${{ github.ref_name }} ./cmd/keymanager)
+          REF=$(ko build --tags ${{ github.ref_name }} ./cmd/keymanager)
+          DIGEST=$(echo "$REF" | grep -oP 'sha256:[a-f0-9]+')
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
       - name: Attest build provenance
