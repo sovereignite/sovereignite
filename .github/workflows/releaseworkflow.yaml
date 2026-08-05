@@ -1,0 +1,151 @@
+name: Release workflow agents
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'internal/releaseworkflow/**'
+      - 'docs/release-task-workflows.md'
+      - 'README.md'
+      - 'docs/structure.md'
+      - '.github/workflows/releaseworkflow.yaml'
+      - 'go.mod'
+      - 'go.sum'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'internal/releaseworkflow/**'
+      - 'docs/release-task-workflows.md'
+      - 'README.md'
+      - 'docs/structure.md'
+      - '.github/workflows/releaseworkflow.yaml'
+      - 'go.mod'
+      - 'go.sum'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Tidy Check
+        run: go mod tidy -diff
+
+      - name: Build
+        run: go build -mod=readonly -v ./internal/releaseworkflow
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Test
+        run: gotestsum --junitfile reports/releaseworkflow-tests.xml --format standard-verbose -- -race -mod=readonly -count=1 -shuffle=on ./internal/releaseworkflow
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: releaseworkflow-test-report
+          path: reports/releaseworkflow-tests.xml
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          args: ./internal/releaseworkflow/...
+          skip-cache: true
+
+  package:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Create source artifact
+        run: |
+          mkdir -p dist
+          tar \
+            --sort=name \
+            --mtime='@0' \
+            --owner=0 \
+            --group=0 \
+            --numeric-owner \
+            -czf dist/releaseworkflow-source.tar.gz \
+            internal/releaseworkflow \
+            docs/release-task-workflows.md \
+            README.md \
+            docs/structure.md \
+            go.mod \
+            go.sum \
+            .github/workflows/releaseworkflow.yaml
+          sha256sum dist/releaseworkflow-source.tar.gz > dist/releaseworkflow-source.tar.gz.sha256
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: dist/releaseworkflow.spdx.json
+          upload-artifact: false
+
+      - uses: sigstore/cosign-installer@v4.1.0
+
+      - name: Sign source artifact
+        run: cosign sign-blob --yes --bundle dist/releaseworkflow-source.sigstore.json dist/releaseworkflow-source.tar.gz
+
+      - name: Attest source provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: dist/releaseworkflow-source.tar.gz
+
+      - name: Attest SBOM
+        uses: actions/attest-sbom@v4
+        with:
+          subject-path: dist/releaseworkflow-source.tar.gz
+          sbom-path: dist/releaseworkflow.spdx.json
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: releaseworkflow-source
+          path: |
+            dist/releaseworkflow-source.tar.gz
+            dist/releaseworkflow-source.tar.gz.sha256
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v7
+        with:
+          name: releaseworkflow-sbom
+          path: dist/releaseworkflow.spdx.json
+
+      - name: Upload signature bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: releaseworkflow-signature
+          path: dist/releaseworkflow-source.sigstore.json
