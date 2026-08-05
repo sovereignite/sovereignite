@@ -4,6 +4,7 @@ on:
   push:
     branches: [master]
     paths:
+      - 'cmd/shipcrew/**'
       - 'internal/shipcrew/**'
       - '.github/workflows/shipcrew.yaml'
       - 'go.mod'
@@ -11,6 +12,7 @@ on:
   pull_request:
     branches: [master]
     paths:
+      - 'cmd/shipcrew/**'
       - 'internal/shipcrew/**'
       - '.github/workflows/shipcrew.yaml'
       - 'go.mod'
@@ -19,6 +21,10 @@ on:
 
 permissions:
   contents: read
+  packages: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
   security-events: write
   issues: write
 
@@ -36,7 +42,7 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: latest
-          args: ./internal/shipcrew/...
+          args: ./cmd/shipcrew/... ./internal/shipcrew/...
 
   test:
     needs: lint
@@ -61,22 +67,91 @@ jobs:
           name: test-report
           path: reports/tests.xml
 
-  vulncheck:
+  build:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@v7
 
-      - name: Run govulncheck
-        uses: golang/govulncheck-action@v1
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-          work-dir: .
-          repo-checkout: false
+
+      - uses: ko-build/setup-ko@v0.10
+
+      - name: Build and push
+        id: build
+        run: |
+          TAG=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          REF=$(ko build --tags "$TAG" --base-import-paths ./cmd/shipcrew)
+          echo "digest=$(echo "$REF" | grep -oP 'sha256:[a-f0-9]+')" >> "$GITHUB_OUTPUT"
+          echo "image=$(echo "$REF" | sed 's/[:@].*//')" >> "$GITHUB_OUTPUT"
+
+  scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: anchore/scan-action@v7
+        id: scan
+        with:
+          image: ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+          fail-build: true
+          output-format: sarif
+
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+
+      - name: Upload SARIF report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sarif-report
+          path: ${{ steps.scan.outputs.sarif }}
+
+  sign:
+    needs: [build, scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: sigstore/cosign-installer@v4.1.0
+
+      - run: cosign sign --yes ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+
+  attest:
+    needs: [build, sign]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ needs.build.outputs.image }}
+          subject-digest: ${{ needs.build.outputs.digest }}
+          push-to-registry: true
 
   notify-failure:
     if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
-    needs: [lint, test, vulncheck]
+    needs: [lint, test, build, scan, sign, attest]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v9
