@@ -16,10 +16,14 @@ permissions:
   packages: write
   id-token: write
   attestations: write
+  security-events: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@v4
 
@@ -36,9 +40,36 @@ jobs:
           echo "digest=$(echo "$REF" | grep -oP 'sha256:[a-f0-9]+')" >> "$GITHUB_OUTPUT"
           echo "image=$(echo "$REF" | sed 's/[:@].*//')" >> "$GITHUB_OUTPUT"
 
-      - name: Attest build provenance
-        uses: actions/attest-build-provenance@v2
+  scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: anchore/scan-action@v6
+        id: scan
         with:
-          subject-name: ${{ steps.build.outputs.image }}
-          subject-digest: ${{ steps.build.outputs.digest }}
+          image: ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+          fail-build: true
+          severity-cutoff: critical
+
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+
+  sign:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: sigstore/cosign-installer@v3
+
+      - run: cosign sign --yes ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+
+  attest:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ needs.build.outputs.image }}
+          subject-digest: ${{ needs.build.outputs.digest }}
           push-to-registry: true
