@@ -135,7 +135,6 @@ jobs:
         with:
           image: ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
           fail-build: true
-          severity-cutoff: critical
           output-format: sarif
 
       - uses: github/codeql-action/upload-sarif@v4
@@ -160,7 +159,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: sigstore/cosign-installer@v3
+      - uses: sigstore/cosign-installer@v4.1.0
 
       - run: cosign sign --yes ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
 
