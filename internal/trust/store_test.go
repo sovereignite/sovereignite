@@ -18,7 +18,7 @@ func TestFileStoreAtomicallyCommitsAndRejectsStaleRevision(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	os.Chmod(dir, 0o700)
+	_ = os.Chmod(dir, 0o700)
 	path := filepath.Join(dir, "state.json")
 	store, err := NewFileStore(path)
 	if err != nil {
@@ -62,7 +62,7 @@ func TestFileStoreSerializesConcurrentRevisionZeroWriters(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	os.Chmod(dir, 0o700)
+	_ = os.Chmod(dir, 0o700)
 	path := filepath.Join(dir, "state.json")
 	store, err := NewFileStore(path)
 	if err != nil {
@@ -106,7 +106,7 @@ func TestFileStoreRejectsUnknownSchemaPermissionsAndSymlink(t *testing.T) {
 	t.Parallel()
 
 	directory := t.TempDir()
-	os.Chmod(directory, 0o700)
+	_ = os.Chmod(directory, 0o700)
 	path := filepath.Join(directory, "state.json")
 	if err := os.WriteFile(path, []byte(`{"version":999}`), 0o600); err != nil {
 		t.Fatal(err)
@@ -147,7 +147,7 @@ func TestFileStoreRejectsRestoredPreRevocationStateAfterRestart(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	os.Chmod(dir, 0o700)
+	_ = os.Chmod(dir, 0o700)
 	path := filepath.Join(dir, "state.json")
 	store, err := NewFileStore(path)
 	if err != nil {
@@ -240,7 +240,7 @@ func TestFileStoreRejectsRevisionNotAdvancingByOne(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	os.Chmod(dir, 0o700)
+	_ = os.Chmod(dir, 0o700)
 	path := filepath.Join(dir, "state.json")
 	store, err := NewFileStore(path)
 	if err != nil {
@@ -268,7 +268,7 @@ func TestFileStorePreservesVersionAcrossCycles(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	os.Chmod(dir, 0o700)
+	_ = os.Chmod(dir, 0o700)
 	path := filepath.Join(dir, "state.json")
 	store, err := NewFileStore(path)
 	if err != nil {

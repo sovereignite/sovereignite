@@ -1299,7 +1299,7 @@ func TestOpenRejectsMismatchedIdentity(t *testing.T) {
 	store.snapshot = emptySnapshot()
 	store.snapshot.Identity = other
 	store.snapshot.Revision = 1
-	service := &Service{}
+	var service *Service
 	config := ServiceConfig{
 		Identity:                   local,
 		Store:                      store,
