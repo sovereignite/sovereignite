@@ -59,6 +59,7 @@ jobs:
             })
 
   test:
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,7 +85,7 @@ jobs:
             })
 
   build:
-    needs: [lint, test]
+    needs: test
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.build.outputs.image }}
