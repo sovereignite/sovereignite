@@ -69,8 +69,18 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
       - name: Test
-        run: go test ./cmd/keymanager/... ./internal/keymanager/...
+        run: gotestsum --junitfile reports/tests.xml --format standard-verbose -- ./cmd/keymanager/... ./internal/keymanager/...
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: reports/tests.xml
 
       - name: Create issue on failure
         if: failure() && github.event_name == 'push'
