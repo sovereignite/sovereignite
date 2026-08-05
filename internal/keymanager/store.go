@@ -94,7 +94,7 @@ func (s *FileStore) Load() (Snapshot, error) {
 	if err != nil {
 		return Snapshot{}, err
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 	directoryLock, err := lockMetadataRoot(
 		context.Background(),
 		root,
@@ -122,7 +122,7 @@ func loadSnapshotFromRoot(root *os.Root, base string) (Snapshot, error) {
 			maximumMetadataBytes,
 		)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	decoder := json.NewDecoder(io.LimitReader(file, maximumMetadataBytes+1))
 	decoder.DisallowUnknownFields()
@@ -170,7 +170,7 @@ func (s *FileStore) Save(snapshot Snapshot) error {
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 	directoryLock, err := lockMetadataRoot(
 		context.Background(),
 		root,
@@ -218,18 +218,18 @@ func saveSnapshotToRoot(
 	if err != nil {
 		return err
 	}
-	defer root.Remove(temporaryName)
+	defer func() { _ = root.Remove(temporaryName) }()
 
 	if err := temporary.Chmod(0o600); err != nil {
-		temporary.Close()
+		_ = temporary.Close()
 		return fmt.Errorf("set metadata permissions: %w", err)
 	}
 	if _, err := io.Copy(temporary, bytes.NewReader(encoded)); err != nil {
-		temporary.Close()
+		_ = temporary.Close()
 		return fmt.Errorf("write metadata: %w", err)
 	}
 	if err := temporary.Sync(); err != nil {
-		temporary.Close()
+		_ = temporary.Close()
 		return fmt.Errorf("sync metadata: %w", err)
 	}
 	if err := temporary.Close(); err != nil {
@@ -287,7 +287,7 @@ func (s *FileStore) withExclusive(
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 	directoryLock, err := lockMetadataRoot(ctx, root, syscall.LOCK_EX)
 	if err != nil {
 		return err
@@ -317,14 +317,14 @@ func lockMetadataRoot(
 		}
 		if !errors.Is(err, syscall.EWOULDBLOCK) &&
 			!errors.Is(err, syscall.EAGAIN) {
-			directory.Close()
+			_ = directory.Close()
 			return nil, fmt.Errorf("lock metadata directory: %w", err)
 		}
 		timer := time.NewTimer(10 * time.Millisecond)
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			directory.Close()
+			_ = directory.Close()
 			return nil, ctx.Err()
 		case <-timer.C:
 		}
@@ -361,7 +361,7 @@ func openPrivateMetadataRoot(path string) (*os.Root, error) {
 		}
 		info, err := root.Lstat(component)
 		if err != nil {
-			root.Close()
+			_ = root.Close()
 			return nil, fmt.Errorf(
 				"inspect metadata directory component %q: %w",
 				component,
@@ -369,7 +369,7 @@ func openPrivateMetadataRoot(path string) (*os.Root, error) {
 			)
 		}
 		if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
-			root.Close()
+			_ = root.Close()
 			return nil, fmt.Errorf(
 				"metadata directory component %q is not a real directory",
 				component,
@@ -377,7 +377,7 @@ func openPrivateMetadataRoot(path string) (*os.Root, error) {
 		}
 		next, err := root.OpenRoot(component)
 		if err != nil {
-			root.Close()
+			_ = root.Close()
 			return nil, fmt.Errorf(
 				"open metadata directory component %q: %w",
 				component,
@@ -386,8 +386,8 @@ func openPrivateMetadataRoot(path string) (*os.Root, error) {
 		}
 		openedDirectory, err := next.Open(".")
 		if err != nil {
-			next.Close()
-			root.Close()
+			_ = next.Close()
+			_ = root.Close()
 			return nil, fmt.Errorf(
 				"open rooted metadata directory component %q: %w",
 				component,
@@ -397,8 +397,8 @@ func openPrivateMetadataRoot(path string) (*os.Root, error) {
 		opened, statErr := openedDirectory.Stat()
 		closeErr := openedDirectory.Close()
 		if statErr != nil || closeErr != nil || !os.SameFile(info, opened) {
-			next.Close()
-			root.Close()
+			_ = next.Close()
+			_ = root.Close()
 			if statErr != nil {
 				return nil, fmt.Errorf(
 					"stat rooted metadata directory component %q: %w",
@@ -419,7 +419,7 @@ func openPrivateMetadataRoot(path string) (*os.Root, error) {
 			)
 		}
 		if err := root.Close(); err != nil {
-			next.Close()
+			_ = next.Close()
 			return nil, fmt.Errorf(
 				"close parent of metadata directory component %q: %w",
 				component,
@@ -429,7 +429,7 @@ func openPrivateMetadataRoot(path string) (*os.Root, error) {
 		root = next
 		if index == len(components)-1 {
 			if err := validatePrivateDirectoryInfo(opened); err != nil {
-				root.Close()
+				_ = root.Close()
 				return nil, err
 			}
 		}
@@ -463,11 +463,11 @@ func openSecureRegularFile(
 	}
 	opened, err := file.Stat()
 	if err != nil {
-		file.Close()
+		_ = file.Close()
 		return nil, nil, fmt.Errorf("stat opened metadata: %w", err)
 	}
 	if !os.SameFile(info, opened) {
-		file.Close()
+		_ = file.Close()
 		return nil, nil, errors.New("metadata file changed while it was opened")
 	}
 	return file, opened, nil
