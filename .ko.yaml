@@ -1,4 +1,4 @@
-defaultBaseImage: gcr.io/distroless/base-debian12
+defaultBaseImage: gcr.io/distroless/cc-debian13
 defaultPlatforms:
   - linux/amd64
 builds:
