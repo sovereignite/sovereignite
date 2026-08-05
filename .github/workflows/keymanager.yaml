@@ -20,8 +20,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      KO_DOCKER_REPO: ghcr.io/${{ github.repository_owner }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,20 +27,14 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: ko-build/setup-ko@v0.8
 
       - name: Build and push
         id: build
         run: |
-          ko build --tags ${{ github.ref_name }} ./cmd/keymanager > ref.txt
-          echo "image=$(sed 's/@.*//' ref.txt)" >> "$GITHUB_OUTPUT"
-          echo "digest=$(grep -oP 'sha256:[a-f0-9]+' ref.txt)" >> "$GITHUB_OUTPUT"
+          REF=$(ko build --tags ${{ github.ref_name }} --base-import-paths ./cmd/keymanager)
+          echo "digest=$(echo "$REF" | grep -oP 'sha256:[a-f0-9]+')" >> "$GITHUB_OUTPUT"
+          echo "image=$(echo "$REF" | sed 's/@.*//')" >> "$GITHUB_OUTPUT"
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
