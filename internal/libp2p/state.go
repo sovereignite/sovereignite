@@ -259,7 +259,7 @@ func requireTrustedDirectoryOwner(path string, info os.FileInfo) error {
 		)
 	}
 	if info.Mode().Perm()&0o022 != 0 &&
-		!(owner == 0 && info.Mode()&os.ModeSticky != 0) {
+		(owner != 0 || info.Mode()&os.ModeSticky == 0) {
 		return fmt.Errorf(
 			"metadata path component %q is group- or world-writable",
 			path,

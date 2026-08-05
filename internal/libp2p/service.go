@@ -553,8 +553,8 @@ func isCanonicalUUID(value string) bool {
 				return false
 			}
 		default:
-			if !((character >= '0' && character <= '9') ||
-				(character >= 'a' && character <= 'f')) {
+			if (character < '0' || character > '9') &&
+				(character < 'a' || character > 'f') {
 				return false
 			}
 		}
