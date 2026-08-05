@@ -133,8 +133,8 @@ jobs:
         id: scan
         with:
           image: ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
-          fail-build: false
-          severity-cutoff: negligible
+          fail-build: true
+          severity-cutoff: critical
           output-format: sarif
 
       - uses: github/codeql-action/upload-sarif@v4
