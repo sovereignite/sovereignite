@@ -40,13 +40,13 @@ jobs:
       - name: Build and push
         id: build
         run: |
-          REF=$(ko build --tags ${{ github.ref_name }} ./cmd/keymanager)
-          DIGEST=$(echo "$REF" | grep -oP 'sha256:[a-f0-9]+')
-          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          ko build --tags ${{ github.ref_name }} ./cmd/keymanager > ref.txt
+          echo "image=$(sed 's/@.*//' ref.txt)" >> "$GITHUB_OUTPUT"
+          echo "digest=$(grep -oP 'sha256:[a-f0-9]+' ref.txt)" >> "$GITHUB_OUTPUT"
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/keymanager
+          subject-name: ${{ steps.build.outputs.image }}
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
