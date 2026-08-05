@@ -79,7 +79,8 @@ jobs:
       - name: Build and push
         id: build
         run: |
-          REF=$(ko build --tags ${{ github.ref_name }} --base-import-paths ./cmd/keymanager)
+          TAG=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          REF=$(ko build --tags "$TAG" --base-import-paths ./cmd/keymanager)
           echo "digest=$(echo "$REF" | grep -oP 'sha256:[a-f0-9]+')" >> "$GITHUB_OUTPUT"
           echo "image=$(echo "$REF" | sed 's/[:@].*//')" >> "$GITHUB_OUTPUT"
 
