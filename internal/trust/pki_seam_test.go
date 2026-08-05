@@ -371,7 +371,7 @@ func TestFederationCrossCertificateIssuanceAndRevocation(t *testing.T) {
 	remoteCA := testCertificateAuthority(t, remote.TrustDomain)
 	gen1 := uint64(20)
 	gen2 := uint64(21)
-	var currentGen uint64 = gen1
+	currentGen := gen1
 	var callCount int
 	policy := AuthorizationPolicyFunc(func(
 		_ context.Context,
@@ -775,7 +775,7 @@ func TestTrustBundlesAreDomainKeyedNeverMerged(t *testing.T) {
 	remoteBCA := testCertificateAuthority(t, remoteB.TrustDomain)
 	genA := uint64(50)
 	genB := uint64(51)
-	var currentGen uint64 = genA
+	currentGen := genA
 	callCount := 0
 	var mu sync.Mutex
 	policy := AuthorizationPolicyFunc(func(
