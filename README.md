@@ -2,49 +2,67 @@
 
 Secure Kubernetes Platform for Everyone.
 
+Sovereignite builds secure Kubernetes clusters on hardware you control. Each
+node's identity is bound to its TPM chip — a hardware root of trust that
+prevents key exfiltration, impersonation, and unauthorized access, even if the
+OS is compromised.
+
+## Why Hardware Trust
+
+Traditional Kubernetes clusters protect keys with file permissions. If an attacker
+gains root, they can read the private key material and impersonate the node.
+Sovereignite's TPM-backed keys never leave the chip — signing happens in
+hardware, and the private portion is non-exportable by design.
+
+- Compromised OS cannot leak signing keys
+- No certificate authority can impersonate a node
+- Trust is physical possession, not administrative access
+
 ## Services
 
-| Service | Description |
-| --- | --- |
-| `keymanager` | Non-exportable TPM signing keys by reviewed role and persistent-handle policy |
-| `libp2p-init` | Lifetime-stable libp2p identity from TPM signing key |
-| `ipfs` | Full Kubo node with TPM-backed IPNS signing and publication |
-| `trust` | Trust domain management and certificate issuance |
-| `discovery` | mDNS/BLE discovery broadcaster |
-| `bootstrap` | Nine-step cluster bootstrap orchestrator |
-| `keyvalidation` | gRPC key validation and JWT issuance |
+### keymanager
 
-## Build
+Manages non-exportable TPM signing keys by reviewed role and persistent-handle
+policy. Persists public-only metadata, verifies live TPM state before use,
+supports initialization, rotation/recovery, and purpose-scoped certificate
+issuance.
 
-```bash
-ko build --local ./cmd/keymanager
-```
+### libp2p-init
 
-All 7 services are defined in `.ko.yaml` and built with `ko`. Container images are
-`linux/amd64` with `CGO_ENABLED=1` on a Fedora 44 base.
+Initializes a lifetime-stable libp2p identity from a non-exportable TPM signing
+key. Persists public identity metadata, sets the hostname to the canonical
+IPNS/libp2p-key name, and serves a local gRPC identity API.
 
-## Kubernetes
+### trust
 
-DaemonSets are under `kubernetes/sovereignite.io/<service>/` with the
-`source/`→`localized/` pattern. Edit values in `source/kustomization.yaml`
-and render with:
+Runs the trust service, waits for readiness, and validates discovery
+configuration. Requires keymanager, libp2p-init, and IPFS services.
 
-```bash
-kustomize build kubernetes/sovereignite.io/keymanager/source
-```
+### keyvalidation
 
-## CI/CD
+gRPC key validation service with `ValidateKey` and `IssueJWT` RPC handling.
 
-GitHub Actions workflows build and push images to `ghcr.io/sovereignite/sovereignite`.
-Per-service workflows trigger only on their own code paths.
+### discovery
 
-## Repository Structure
+Discovery broadcaster for a configured device identity. Validates a strict
+discovery record, advertises over mDNS and BLE/BlueZ, and exposes local gRPC
+methods for start, stop, and list.
 
-```
-cmd/                          Service entry points
-internal/                     Domain packages
-pkg/api/proto/sovereignite/v1 Protobuf/gRPC API
-kubernetes/sovereignite.io/   DaemonSet kustomizations
-.os/systemd/                 systemd unit files
-.github/workflows/            CI/CD pipelines
-```
+### bootstrap
+
+Orchestrates a fixed nine-step cluster bootstrap: CA signing, kubelet config,
+Calico IPv6 ULA, Istio ingress, SPIRE TPM config, Kubernetes API server,
+control-plane wait, cluster config apply, and final readiness.
+
+### ipfs
+
+Fail-closed service boundary around a maintained full Kubo node, TPM-backed
+IPNS signing, public Trust publication snapshots, monotonic pre-signed IPNS
+records, and durable publication state.
+
+## Learn More
+
+- [Build](docs/build.md)
+- [Kubernetes](docs/kubernetes.md)
+- [CI/CD](docs/cicd.md)
+- [Repository Structure](docs/structure.md)
