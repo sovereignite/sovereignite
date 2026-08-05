@@ -57,10 +57,6 @@ func testAddrInfo(t *testing.T, pid peer.ID) peer.AddrInfo {
 	}
 }
 
-func testRecordSPIFFEID(t *testing.T, identity DeviceIdentity) string {
-	return identity.SPIFFEID
-}
-
 func TestMapAddrInfoToIdentityRecordBindsPeerIDAndAddresses(t *testing.T) {
 	t.Parallel()
 

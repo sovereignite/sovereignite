@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"log/slog"
 	"net"
@@ -26,7 +25,6 @@ import (
 )
 
 var (
-	errArgs     = errors.New("trust service accepts no positional arguments")
 	openTPM     = tpm.OpenGoTPM
 	newKeyStore = keymanager.NewFileStore
 	newManager  = keymanager.NewManager
@@ -99,7 +97,7 @@ func run(arguments []string, testCtx context.Context) error {
 		slog.Error("create trust state directory", "error", err)
 		return err
 	}
-	defer os.RemoveAll(stateDir)
+	defer func() { _ = os.RemoveAll(stateDir) }()
 
 	store, err := trust.NewFileStore(stateDir + "/state.json")
 	if err != nil {
@@ -113,7 +111,7 @@ func run(arguments []string, testCtx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer backend.Close()
+	defer func() { _ = backend.Close() }()
 
 	metadataPathClean := strings.TrimSpace(*metadataPath)
 	kms, err := newKeyStore(metadataPathClean)

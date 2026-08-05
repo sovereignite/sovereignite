@@ -1,0 +1,170 @@
+name: Build trust
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'cmd/trust/**'
+      - 'internal/trust/**'
+      - '.github/workflows/trust.yaml'
+      - 'go.mod'
+      - 'go.sum'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'cmd/trust/**'
+      - 'internal/trust/**'
+      - '.github/workflows/trust.yaml'
+      - 'go.mod'
+      - 'go.sum'
+  workflow_run:
+    workflows: ["Build keymanager", "Build libp2p-init"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+  security-events: write
+  issues: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          args: ./cmd/trust/... ./internal/trust/...
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Test
+        run: gotestsum --junitfile reports/tests.xml --format standard-verbose -- ./cmd/trust/... ./internal/trust/...
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report
+          path: reports/tests.xml
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: ko-build/setup-ko@v0.10
+
+      - name: Build and push
+        id: build
+        run: |
+          TAG=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+          REF=$(ko build --tags "$TAG" --base-import-paths ./cmd/trust)
+          echo "digest=$(echo "$REF" | grep -oP 'sha256:[a-f0-9]+')" >> "$GITHUB_OUTPUT"
+          echo "image=$(echo "$REF" | sed 's/[:@].*//')" >> "$GITHUB_OUTPUT"
+
+  scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: anchore/scan-action@v7
+        id: scan
+        with:
+          image: ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+          fail-build: true
+          output-format: sarif
+
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+
+      - name: Upload SARIF report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sarif-report
+          path: ${{ steps.scan.outputs.sarif }}
+
+  sign:
+    needs: [build, scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: sigstore/cosign-installer@v4.1.0
+
+      - run: cosign sign --yes ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+
+  attest:
+    needs: [build, sign]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ needs.build.outputs.image }}
+          subject-digest: ${{ needs.build.outputs.digest }}
+          push-to-registry: true
+
+  notify-failure:
+    if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [lint, test, build, scan, sign, attest]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Build failed: trust (${context.sha.substring(0, 7)})`,
+              body: `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['ci-failure', 'trust']
+            })
