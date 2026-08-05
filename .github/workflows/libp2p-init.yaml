@@ -44,7 +44,7 @@ jobs:
           args: ./cmd/libp2p-init/... ./internal/libp2p/...
 
       - name: Create issue on failure
-        if: failure() && github.event_name == 'push'
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: actions/github-script@v7
         with:
           script: |
@@ -70,7 +70,7 @@ jobs:
         run: go test ./cmd/libp2p-init/... ./internal/libp2p/...
 
       - name: Create issue on failure
-        if: failure() && github.event_name == 'push'
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: actions/github-script@v7
         with:
           script: |
