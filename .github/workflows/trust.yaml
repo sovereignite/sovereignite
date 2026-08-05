@@ -158,7 +158,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: sigstore/cosign-installer@v4
+      - uses: sigstore/cosign-installer@v3
 
       - run: cosign sign --yes ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
 
