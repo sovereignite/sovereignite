@@ -1,15 +1,12 @@
-# sovereignite.io
+# Sovereignite
 
-This directory catalogs Sovereignite controllers and custom resources that a
-deployment may import. It contains no domain-level kustomization and does not
-imply an installation order.
+`tpm-cluster-issuer` installs the API and controller for the TPM-backed
+cert-manager external issuer. `tpm-cluster-issuers` creates the project issuer
+resources and grants cert-manager permission to approve their requests. Deploy
+the controller before the issuer resources.
 
-| Path | Provides |
-| --- | --- |
-| `tpm-cluster-issuer` | TPM-backed cert-manager external issuer API and controller |
-| `tpm-cluster-issuers` | Project issuer instances and cert-manager approval RBAC |
-| `k8s-tpm-csr-signer` | TPM-backed Kubernetes CSR signer API, controller, and policies |
-| `spire-tpm-keymanager` | SPIRE TPM key-manager API, controller, and configured resource |
+`k8s-tpm-csr-signer` installs the TPM-backed Kubernetes CSR signer and the
+kubelet client and serving certificate policies.
 
-Consumers must establish each controller API before importing custom resources
-that depend on it.
+`spire-tpm-keymanager` installs the SPIRE TPM key manager API and controller
+together with the key manager resource consumed by SPIRE.

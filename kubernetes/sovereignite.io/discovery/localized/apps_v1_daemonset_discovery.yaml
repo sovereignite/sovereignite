@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/name: discovery
+    app.kubernetes.io/part-of: sovereignite
+  name: discovery
+  namespace: sovereignite-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: discovery
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: discovery
+        app.kubernetes.io/part-of: sovereignite
+    spec:
+      containers:
+      - env:
+        - name: SOVEREIGNITE_DEVICE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: SOVEREIGNITE_TRUST_DOMAIN
+          value: sovereignite.net
+        - name: SOVEREIGNITE_ADOPTION_STATE
+          value: unadopted
+        - name: SOVEREIGNITE_SERVICE_PORT
+          value: "8443"
+        - name: SOVEREIGNITE_BLE_SERVICE_UUID
+          value: 0000ff01-0000-1000-8000-00805f9b34fb
+        - name: SOVEREIGNITE_BLUEZ_ADAPTER
+          value: /org/bluez/hci0
+        image: ghcr.io/sovereignite/discovery:v0.0.0
+        name: discovery
+        securityContext:
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 0
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /run/sovereignite/discovery
+          name: discovery-runtime
+        - mountPath: /run/sovereignite/trust
+          name: trust-runtime
+          readOnly: true
+        - mountPath: /run/dbus/system_bus_socket
+          name: dbus-socket
+          readOnly: true
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - test -f /run/sovereignite/trust/ready.json || exit 1
+        image: busybox:latest
+        name: wait-trust
+        volumeMounts:
+        - mountPath: /run/sovereignite/trust
+          name: trust-runtime
+          readOnly: true
+      serviceAccountName: discovery
+      volumes:
+      - emptyDir: {}
+        name: discovery-runtime
+      - hostPath:
+          path: /run/sovereignite/trust
+          type: Directory
+        name: trust-runtime
+      - hostPath:
+          path: /run/dbus/system_bus_socket
+          type: Socket
+        name: dbus-socket

@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/name: trust
+    app.kubernetes.io/part-of: sovereignite
+  name: trust
+  namespace: sovereignite-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: trust
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: trust
+        app.kubernetes.io/part-of: sovereignite
+    spec:
+      containers:
+      - args:
+        - --tpm-device=/dev/tpmrm0
+        - --metadata-path=/var/lib/sovereignite/keymanager/metadata.json
+        image: ghcr.io/sovereignite/trust:v0.0.0
+        name: trust
+        securityContext:
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 0
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /dev/tpmrm0
+          name: tpmrm
+          readOnly: true
+        - mountPath: /var/lib/sovereignite/trust
+          name: trust-state
+        - mountPath: /run/sovereignite/trust
+          name: trust-runtime
+        - mountPath: /var/lib/sovereignite/keymanager
+          name: keymanager-state
+          readOnly: true
+        - mountPath: /run/sovereignite/ipfs
+          name: ipfs-runtime
+          readOnly: true
+        - mountPath: /var/lib/sovereignite/public
+          name: public-state
+        - mountPath: /run/sovereignite/discovery
+          name: discovery-runtime
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - test -f /run/sovereignite/ipfs/ready.json || exit 1
+        image: busybox:latest
+        name: wait-ipfs
+        volumeMounts:
+        - mountPath: /run/sovereignite/ipfs
+          name: ipfs-runtime
+          readOnly: true
+      serviceAccountName: trust
+      volumes:
+      - hostPath:
+          path: /dev/tpmrm0
+          type: CharDevice
+        name: tpmrm
+      - hostPath:
+          path: /var/lib/sovereignite/trust
+          type: DirectoryOrCreate
+        name: trust-state
+      - emptyDir: {}
+        name: trust-runtime
+      - hostPath:
+          path: /var/lib/sovereignite/keymanager
+          type: Directory
+        name: keymanager-state
+      - hostPath:
+          path: /run/sovereignite/ipfs
+          type: Directory
+        name: ipfs-runtime
+      - hostPath:
+          path: /var/lib/sovereignite/public
+          type: DirectoryOrCreate
+        name: public-state
+      - emptyDir: {}
+        name: discovery-runtime

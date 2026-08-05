@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: libp2p-init
+  namespace: sovereignite-system
+  labels:
+    app.kubernetes.io/name: libp2p-init
+    app.kubernetes.io/part-of: sovereignite
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: libp2p-init
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: libp2p-init
+        app.kubernetes.io/part-of: sovereignite
+    spec:
+      serviceAccountName: libp2p-init
+      initContainers:
+        - name: wait-keymanager
+          image: busybox:latest
+          command: ["sh", "-c", "test -f /run/sovereignite/keymanager/ready.json || exit 1"]
+          volumeMounts:
+            - name: keymanager-runtime
+              mountPath: /run/sovereignite/keymanager
+              readOnly: true
+      containers:
+        - name: libp2p-init
+          image: ghcr.io/sovereignite/libp2p-init:v0.0.0
+          args:
+            - --state-root=/var/lib/sovereignite/identity
+            - --runtime-root=/run/sovereignite/identity
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+            runAsGroup: 0
+          volumeMounts:
+            - name: identity-state
+              mountPath: /var/lib/sovereignite/identity
+            - name: identity-runtime
+              mountPath: /run/sovereignite/identity
+            - name: keymanager-runtime
+              mountPath: /run/sovereignite/keymanager
+              readOnly: true
+            - name: dbus-socket
+              mountPath: /run/dbus/system_bus_socket
+              readOnly: true
+      volumes:
+        - name: identity-state
+          hostPath:
+            path: /var/lib/sovereignite/identity
+            type: DirectoryOrCreate
+        - name: identity-runtime
+          emptyDir: {}
+        - name: keymanager-runtime
+          hostPath:
+            path: /run/sovereignite/keymanager
+            type: Directory
+        - name: dbus-socket
+          hostPath:
+            path: /run/dbus/system_bus_socket
+            type: Socket

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: keyvalidation
+  namespace: sovereignite-system
+  labels:
+    app.kubernetes.io/name: keyvalidation
+    app.kubernetes.io/part-of: sovereignite
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keyvalidation
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keyvalidation
+        app.kubernetes.io/part-of: sovereignite
+    spec:
+      serviceAccountName: keyvalidation
+      containers:
+        - name: keyvalidation
+          image: ghcr.io/sovereignite/keyvalidation:v0.0.0
+          args:
+            - --addr=127.0.0.1:8443
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: true
+          ports:
+            - name: grpc
+              containerPort: 8443
+              protocol: TCP

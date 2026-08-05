@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: trust
+  namespace: sovereignite-system
+  labels:
+    app.kubernetes.io/name: trust
+    app.kubernetes.io/part-of: sovereignite
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: trust
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: trust
+        app.kubernetes.io/part-of: sovereignite
+    spec:
+      serviceAccountName: trust
+      initContainers:
+        - name: wait-ipfs
+          image: busybox:latest
+          command: ["sh", "-c", "test -f /run/sovereignite/ipfs/ready.json || exit 1"]
+          volumeMounts:
+            - name: ipfs-runtime
+              mountPath: /run/sovereignite/ipfs
+              readOnly: true
+      containers:
+        - name: trust
+          image: ghcr.io/sovereignite/trust:v0.0.0
+          args:
+            - --tpm-device=/dev/tpmrm0
+            - --metadata-path=/var/lib/sovereignite/keymanager/metadata.json
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+            runAsGroup: 0
+          volumeMounts:
+            - name: tpmrm
+              mountPath: /dev/tpmrm0
+              readOnly: true
+            - name: trust-state
+              mountPath: /var/lib/sovereignite/trust
+            - name: trust-runtime
+              mountPath: /run/sovereignite/trust
+            - name: keymanager-state
+              mountPath: /var/lib/sovereignite/keymanager
+              readOnly: true
+            - name: ipfs-runtime
+              mountPath: /run/sovereignite/ipfs
+              readOnly: true
+            - name: public-state
+              mountPath: /var/lib/sovereignite/public
+            - name: discovery-runtime
+              mountPath: /run/sovereignite/discovery
+      volumes:
+        - name: tpmrm
+          hostPath:
+            path: /dev/tpmrm0
+            type: CharDevice
+        - name: trust-state
+          hostPath:
+            path: /var/lib/sovereignite/trust
+            type: DirectoryOrCreate
+        - name: trust-runtime
+          emptyDir: {}
+        - name: keymanager-state
+          hostPath:
+            path: /var/lib/sovereignite/keymanager
+            type: Directory
+        - name: ipfs-runtime
+          hostPath:
+            path: /run/sovereignite/ipfs
+            type: Directory
+        - name: public-state
+          hostPath:
+            path: /var/lib/sovereignite/public
+            type: DirectoryOrCreate
+        - name: discovery-runtime
+          emptyDir: {}

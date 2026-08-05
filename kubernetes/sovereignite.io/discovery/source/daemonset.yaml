@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: discovery
+  namespace: sovereignite-system
+  labels:
+    app.kubernetes.io/name: discovery
+    app.kubernetes.io/part-of: sovereignite
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: discovery
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: discovery
+        app.kubernetes.io/part-of: sovereignite
+    spec:
+      serviceAccountName: discovery
+      initContainers:
+        - name: wait-trust
+          image: busybox:latest
+          command: ["sh", "-c", "test -f /run/sovereignite/trust/ready.json || exit 1"]
+          volumeMounts:
+            - name: trust-runtime
+              mountPath: /run/sovereignite/trust
+              readOnly: true
+      containers:
+        - name: discovery
+          image: ghcr.io/sovereignite/discovery:v0.0.0
+          env:
+            - name: SOVEREIGNITE_DEVICE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: SOVEREIGNITE_TRUST_DOMAIN
+              value: "sovereignite.net"
+            - name: SOVEREIGNITE_ADOPTION_STATE
+              value: "unadopted"
+            - name: SOVEREIGNITE_SERVICE_PORT
+              value: "8443"
+            - name: SOVEREIGNITE_BLE_SERVICE_UUID
+              value: "0000ff01-0000-1000-8000-00805f9b34fb"
+            - name: SOVEREIGNITE_BLUEZ_ADAPTER
+              value: "/org/bluez/hci0"
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+            runAsGroup: 0
+          volumeMounts:
+            - name: discovery-runtime
+              mountPath: /run/sovereignite/discovery
+            - name: trust-runtime
+              mountPath: /run/sovereignite/trust
+              readOnly: true
+            - name: dbus-socket
+              mountPath: /run/dbus/system_bus_socket
+              readOnly: true
+      volumes:
+        - name: discovery-runtime
+          emptyDir: {}
+        - name: trust-runtime
+          hostPath:
+            path: /run/sovereignite/trust
+            type: Directory
+        - name: dbus-socket
+          hostPath:
+            path: /run/dbus/system_bus_socket
+            type: Socket

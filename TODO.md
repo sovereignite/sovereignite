@@ -317,6 +317,8 @@ for configurability.
 | 2026-08-04 | Proto regenerated from .proto source | Fixed corrupted raw descriptor (sed had mangled binary blob). `go_package` updated to new module path. `protoc` + `protoc-gen-go` + `protoc-gen-go-grpc` via nix dev shell. |
 | 2026-08-04 | ULA test vectors updated | Domain separator changed from `sovereignite.net` → `github.com/sovereignite/sovereignite`. Updated 3 golden test vectors across `internal/shared` and `internal/ipfs`. All 18 packages pass. |
 | 2026-08-04 | Flake updated with proto tooling | Added `protobuf`, `protoc-gen-go`, `protoc-gen-go-grpc` to nix dev shell. |
+| 2026-08-04 | .ko.yaml created | Root `.ko.yaml` with builds for all 7 services (fedora:44, linux/amd64, CGO_ENABLED=1, ldflags -s -w). |
+| 2026-08-04 | Kustomize DaemonSets created | 7 services: keymanager, libp2p-init, ipfs, trust, discovery, bootstrap, keyvalidation. Each with source/ and localized/, images transformer at top, init container dependency chain, TPM/DBus/containerd volume mounts. All source kustomizations validate. |
 
 ## Decisions
 

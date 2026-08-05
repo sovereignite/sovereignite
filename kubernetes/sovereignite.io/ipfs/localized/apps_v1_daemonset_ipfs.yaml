@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/name: ipfs
+    app.kubernetes.io/part-of: sovereignite
+  name: ipfs
+  namespace: sovereignite-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ipfs
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ipfs
+        app.kubernetes.io/part-of: sovereignite
+    spec:
+      containers:
+      - env:
+        - name: HOME
+          value: /var/lib/sovereignite/ipfs
+        image: ghcr.io/sovereignite/ipfs:v0.0.0
+        name: ipfs
+        securityContext:
+          privileged: false
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /var/lib/sovereignite/ipfs
+          name: ipfs-state
+        - mountPath: /run/sovereignite/ipfs
+          name: ipfs-runtime
+        - mountPath: /run/sovereignite/identity
+          name: identity-runtime
+          readOnly: true
+        - mountPath: /var/lib/sovereignite/public
+          name: public-state
+          readOnly: true
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - test -f /run/sovereignite/identity/endpoint.json || exit 1
+        image: busybox:latest
+        name: wait-libp2p
+        volumeMounts:
+        - mountPath: /run/sovereignite/identity
+          name: identity-runtime
+          readOnly: true
+      serviceAccountName: ipfs
+      volumes:
+      - hostPath:
+          path: /var/lib/sovereignite/ipfs
+          type: DirectoryOrCreate
+        name: ipfs-state
+      - emptyDir: {}
+        name: ipfs-runtime
+      - hostPath:
+          path: /run/sovereignite/identity
+          type: Directory
+        name: identity-runtime
+      - hostPath:
+          path: /var/lib/sovereignite/public
+          type: DirectoryOrCreate
+        name: public-state
