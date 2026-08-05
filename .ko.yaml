@@ -1,4 +1,4 @@
-defaultBaseImage: gcr.io/distroless/cc-debian13
+defaultBaseImage: fedora:44
 defaultPlatforms:
   - linux/amd64
 builds:
