@@ -1,6 +1,6 @@
 # Sovereignite
 
-Secure Kubernetes deployment scaffolding for Libvirt/KVM.
+Secure Kubernetes Platform for Everyone.
 
 ## Services
 
