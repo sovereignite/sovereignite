@@ -19,7 +19,25 @@ permissions:
   security-events: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: latest
+
+      - name: Test
+        run: go test ./cmd/keymanager/... ./internal/keymanager/... ./internal/tpm/...
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.build.outputs.image }}
