@@ -17,7 +17,6 @@ Secure Kubernetes Platform for Everyone.
 ## Build
 
 ```bash
-nix develop
 ko build --local ./cmd/keymanager
 ```
 
