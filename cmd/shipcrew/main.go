@@ -9,7 +9,11 @@
 // The crew uses ADK collaboration modes, delegation, tool confirmation for
 // human approval gates, and optional A2A remote crew members.
 //
-// Set GOOGLE_API_KEY in the environment for the Gemini model backend.
+// Authentication (one of):
+//
+//	GOOGLE_API_KEY=...                      — Google AI Studio
+//	GOOGLE_GENAI_USE_VERTEXAI=1             — Vertex AI with ADC
+//	GCLOUD_PROJECT + GOOGLE_CLOUD_LOCATION  — Vertex AI explicit project
 package main
 
 import (
@@ -42,19 +46,24 @@ func main() {
 	if *issue == 0 && !*serve {
 		fmt.Fprintln(os.Stderr, "usage: shipcrew --issue <number> [--model <model>]")
 		fmt.Fprintln(os.Stderr, "       shipcrew --serve [--port <port>] [--model <model>]")
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, "authentication:")
+		fmt.Fprintln(os.Stderr, "  GOOGLE_API_KEY=...                      Google AI Studio")
+		fmt.Fprintln(os.Stderr, "  GOOGLE_GENAI_USE_VERTEXAI=1             Vertex AI with ADC")
+		fmt.Fprintln(os.Stderr, "  GCLOUD_PROJECT + GOOGLE_CLOUD_LOCATION  Vertex AI explicit project")
 		os.Exit(1)
 	}
 
 	ctx := context.Background()
 
-	apiKey := os.Getenv("GOOGLE_API_KEY")
-	if apiKey == "" {
-		log.Fatal("GOOGLE_API_KEY environment variable is required. Get a key from https://ai.google.dev/gemini-api/docs/api-key")
+	clientConfig, err := buildClientConfig()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	skipper, err := shipcrew.NewCrew(ctx, shipcrew.CrewConfig{
 		ModelName:          *model,
-		GeminiClientConfig: &genai.ClientConfig{APIKey: apiKey},
+		GeminiClientConfig: clientConfig,
 	})
 	if err != nil {
 		log.Fatalf("Failed to create crew: %v", err)
@@ -66,6 +75,27 @@ func main() {
 	}
 
 	runCLI(ctx, skipper, *issue)
+}
+
+func buildClientConfig() (*genai.ClientConfig, error) {
+	if os.Getenv("GOOGLE_GENAI_USE_VERTEXAI") == "1" {
+		project := os.Getenv("GCLOUD_PROJECT")
+		location := os.Getenv("GOOGLE_CLOUD_LOCATION")
+		if project == "" || location == "" {
+			return nil, fmt.Errorf("Vertex AI requires GCLOUD_PROJECT and GOOGLE_CLOUD_LOCATION")
+		}
+		return &genai.ClientConfig{
+			Backend:  genai.BackendVertexAI,
+			Project:  project,
+			Location: location,
+		}, nil
+	}
+
+	apiKey := os.Getenv("GOOGLE_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("no credentials found. Set GOOGLE_API_KEY (Google AI Studio) or GOOGLE_GENAI_USE_VERTEXAI=1 (Vertex AI)")
+	}
+	return &genai.ClientConfig{APIKey: apiKey}, nil
 }
 
 func runCLI(ctx context.Context, skipper agent.Agent, issue int) {
