@@ -10,5 +10,6 @@ runs:
   steps:
     - name: Install kpt
       run: |
-        curl -fsSL "https://github.com/kptdev/kpt/releases/download/${{ inputs.version }}/kpt_linux_amd64.tar.gz" | tar xz -C /usr/local/bin kpt
+        VERSION="${{ inputs.version }}"
+        curl -fsSL "https://github.com/kptdev/kpt/releases/download/${VERSION}/kpt_linux_amd64-${VERSION#v}.tar.gz" | tar xz -C /usr/local/bin kpt
       shell: bash
