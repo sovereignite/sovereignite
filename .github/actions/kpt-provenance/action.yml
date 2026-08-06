@@ -4,9 +4,12 @@ inputs:
   package_path:
     description: 'Path to kpt package directory'
     required: true
+  image:
+    description: 'Provenance function image'
+    required: true
 runs:
   using: "composite"
   steps:
     - name: "Provenance"
-      run: kpt fn eval "${{ inputs.package_path }}" -i ghcr.io/sovereignite/kpt-fn-provenance:latest --output unwrap
+      run: kpt fn eval "${{ inputs.package_path }}" -i "${{ inputs.image }}" --output unwrap
       shell: bash

@@ -53,6 +53,21 @@ jobs:
         with:
           import-path: ./cmd/shipcrew
 
+  build-kpt-fn:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Build"
+        id: build
+        uses: ./.github/actions/ko-build
+        with:
+          import-path: ./kubernetes/sovereignite.net/kpt-functions/provenance
+
   scan:
     needs: build
     runs-on: ubuntu-latest
@@ -93,7 +108,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   package:
-    needs: build
+    needs: [build, build-kpt-fn]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -120,10 +135,11 @@ jobs:
         uses: ./.github/actions/kpt-provenance
         with:
           package_path: kubernetes/sovereignite.net/adk/shipcrew
+          image: ${{ needs.build-kpt-fn.outputs.image }}@${{ needs.build-kpt-fn.outputs.digest }}
 
   notify-failure:
     if: failure() && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
-    needs: [lint, test, build, scan, sign, attest, package]
+    needs: [lint, test, build, build-kpt-fn, scan, sign, attest, package]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
