@@ -20,7 +20,7 @@ import (
 
 	"google.golang.org/adk/v2/agent"
 	"google.golang.org/adk/v2/agent/llmagent"
-	"google.golang.org/adk/v2/agent/remoteagent"
+	"google.golang.org/adk/v2/agent/remoteagent/v2"
 	"google.golang.org/adk/v2/model/gemini"
 	"google.golang.org/adk/v2/tool"
 	"google.golang.org/adk/v2/tool/functiontool"
@@ -443,9 +443,9 @@ You must not silently modify agent instructions, tools, permissions, or workflow
 
 	for _, rw := range cfg.RemoteCrewMembers {
 		remote, err := remoteagent.NewA2A(remoteagent.A2AConfig{
-			Name:            rw.Name,
-			Description:     rw.Description,
-			AgentCardSource: rw.AgentCardSource,
+			Name:              rw.Name,
+			Description:       rw.Description,
+			AgentCardProvider: remoteagent.NewAgentCardProvider(rw.AgentCardSource),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("shipcrew: remote crew member %q: %w", rw.Name, err)
