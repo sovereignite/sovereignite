@@ -3,17 +3,15 @@
 // Usage:
 //
 //	shipcrew --issue 26
-//	shipcrew --issue 26 --model gemini-2.0-flash
+//	shipcrew --issue 26 --backend openai --model gpt-4o
+//	shipcrew --backend ollama --model llama3.1
 //	shipcrew --serve --port 8080
 //
-// The crew uses ADK collaboration modes, delegation, tool confirmation for
-// human approval gates, and optional A2A remote crew members.
+// Backends:
 //
-// Authentication (one of):
-//
-//	GOOGLE_API_KEY=...                      — Google AI Studio
-//	GOOGLE_GENAI_USE_VERTEXAI=1             — Vertex AI with ADC
-//	GCLOUD_PROJECT + GOOGLE_CLOUD_LOCATION  — Vertex AI explicit project
+//	gemini  — Google AI Studio (GOOGLE_API_KEY) or Vertex AI (GOOGLE_GENAI_USE_VERTEXAI=1)
+//	openai  — OpenAI (OPENAI_API_KEY)
+//	ollama  — Local Ollama (OPENAI_BASE_URL=http://localhost:11434/v1)
 package main
 
 import (
@@ -29,6 +27,9 @@ import (
 	"google.golang.org/adk/v2/cmd/launcher"
 	"google.golang.org/adk/v2/cmd/launcher/web"
 	"google.golang.org/adk/v2/cmd/launcher/web/a2a"
+	"google.golang.org/adk/v2/model"
+	"google.golang.org/adk/v2/model/gemini"
+	"google.golang.org/adk/v2/model/openaimodel"
 	"google.golang.org/adk/v2/runner"
 	"google.golang.org/adk/v2/session"
 	"google.golang.org/genai"
@@ -38,32 +39,32 @@ import (
 
 func main() {
 	issue := flag.Int("issue", 0, "GitHub issue number to process")
-	model := flag.String("model", "gemini-2.0-flash", "ADK model identifier")
+	backend := flag.String("backend", "gemini", "Model backend: gemini, openai, ollama")
+	modelName := flag.String("model", "", "Model name (default depends on backend)")
 	serve := flag.Bool("serve", false, "Run as A2A server instead of one-shot CLI")
 	port := flag.Int("port", 8080, "Port for A2A server mode")
 	flag.Parse()
 
 	if *issue == 0 && !*serve {
-		fmt.Fprintln(os.Stderr, "usage: shipcrew --issue <number> [--model <model>]")
-		fmt.Fprintln(os.Stderr, "       shipcrew --serve [--port <port>] [--model <model>]")
+		fmt.Fprintln(os.Stderr, "usage: shipcrew --issue <number> [--backend gemini|openai|ollama] [--model <model>]")
+		fmt.Fprintln(os.Stderr, "       shipcrew --serve [--port <port>] [--backend <backend>] [--model <model>]")
 		fmt.Fprintln(os.Stderr)
-		fmt.Fprintln(os.Stderr, "authentication:")
-		fmt.Fprintln(os.Stderr, "  GOOGLE_API_KEY=...                      Google AI Studio")
-		fmt.Fprintln(os.Stderr, "  GOOGLE_GENAI_USE_VERTEXAI=1             Vertex AI with ADC")
-		fmt.Fprintln(os.Stderr, "  GCLOUD_PROJECT + GOOGLE_CLOUD_LOCATION  Vertex AI explicit project")
+		fmt.Fprintln(os.Stderr, "backends:")
+		fmt.Fprintln(os.Stderr, "  gemini   GOOGLE_API_KEY or GOOGLE_GENAI_USE_VERTEXAI=1")
+		fmt.Fprintln(os.Stderr, "  openai   OPENAI_API_KEY")
+		fmt.Fprintln(os.Stderr, "  ollama   OPENAI_BASE_URL=http://localhost:11434/v1")
 		os.Exit(1)
 	}
 
 	ctx := context.Background()
 
-	clientConfig, err := buildClientConfig()
+	llm, err := buildModel(ctx, *backend, *modelName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	skipper, err := shipcrew.NewCrew(ctx, shipcrew.CrewConfig{
-		ModelName:          *model,
-		GeminiClientConfig: clientConfig,
+		Model: llm,
 	})
 	if err != nil {
 		log.Fatalf("Failed to create crew: %v", err)
@@ -77,25 +78,57 @@ func main() {
 	runCLI(ctx, skipper, *issue)
 }
 
-func buildClientConfig() (*genai.ClientConfig, error) {
+func buildModel(ctx context.Context, backend, modelName string) (model.LLM, error) {
+	switch backend {
+	case "gemini":
+		return buildGeminiModel(ctx, modelName)
+	case "openai":
+		return buildOpenAIModel(ctx, modelName, "")
+	case "ollama":
+		return buildOpenAIModel(ctx, modelName, "http://localhost:11434/v1")
+	default:
+		return nil, fmt.Errorf("unknown backend %q (supported: gemini, openai, ollama)", backend)
+	}
+}
+
+func buildGeminiModel(ctx context.Context, modelName string) (model.LLM, error) {
+	if modelName == "" {
+		modelName = "gemini-2.0-flash"
+	}
+
 	if os.Getenv("GOOGLE_GENAI_USE_VERTEXAI") == "1" {
 		project := os.Getenv("GCLOUD_PROJECT")
-		location := os.Getenv("GOOGLE_CLOUD_LOCATION")
-		if project == "" || location == "" {
-			return nil, fmt.Errorf("Vertex AI requires GCLOUD_PROJECT and GOOGLE_CLOUD_LOCATION")
+		if project == "" {
+			project = os.Getenv("GOOGLE_CLOUD_PROJECT")
 		}
-		return &genai.ClientConfig{
+		location := os.Getenv("GOOGLE_CLOUD_LOCATION")
+		if location == "" {
+			location = os.Getenv("GOOGLE_CLOUD_REGION")
+		}
+		if project == "" || location == "" {
+			return nil, fmt.Errorf("vertex ai requires GCLOUD_PROJECT and GOOGLE_CLOUD_LOCATION")
+		}
+		return gemini.NewModel(ctx, modelName, &genai.ClientConfig{
 			Backend:  genai.BackendVertexAI,
 			Project:  project,
 			Location: location,
-		}, nil
+		})
 	}
 
 	apiKey := os.Getenv("GOOGLE_API_KEY")
 	if apiKey == "" {
-		return nil, fmt.Errorf("no credentials found. Set GOOGLE_API_KEY (Google AI Studio) or GOOGLE_GENAI_USE_VERTEXAI=1 (Vertex AI)")
+		return nil, fmt.Errorf("gemini backend requires GOOGLE_API_KEY (or set GOOGLE_GENAI_USE_VERTEXAI=1 for Vertex AI)")
 	}
-	return &genai.ClientConfig{APIKey: apiKey}, nil
+	return gemini.NewModel(ctx, modelName, &genai.ClientConfig{APIKey: apiKey})
+}
+
+func buildOpenAIModel(ctx context.Context, modelName, baseURL string) (model.LLM, error) {
+	if modelName == "" {
+		modelName = "gpt-4o-mini"
+	}
+	return openaimodel.NewModel(ctx, modelName, &openaimodel.ClientConfig{
+		BaseURL: baseURL,
+	})
 }
 
 func runCLI(ctx context.Context, skipper agent.Agent, issue int) {

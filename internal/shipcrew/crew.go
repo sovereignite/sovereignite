@@ -21,10 +21,9 @@ import (
 	"google.golang.org/adk/v2/agent"
 	"google.golang.org/adk/v2/agent/llmagent"
 	"google.golang.org/adk/v2/agent/remoteagent/v2"
-	"google.golang.org/adk/v2/model/gemini"
+	"google.golang.org/adk/v2/model"
 	"google.golang.org/adk/v2/tool"
 	"google.golang.org/adk/v2/tool/functiontool"
-	"google.golang.org/genai"
 )
 
 // Agent names used for delegation and identification.
@@ -263,11 +262,9 @@ func newRetroTools() ([]tool.Tool, error) {
 
 // CrewConfig holds configuration for building the crew.
 type CrewConfig struct {
-	// ModelName is the ADK model identifier (e.g. "gemini-2.0-flash").
-	ModelName string
-
-	// GeminiClientConfig is the genai client configuration for the model.
-	GeminiClientConfig *genai.ClientConfig
+	// Model is the LLM used by all crew members. Accepts any model.LLM
+	// implementation: gemini.NewModel, openaimodel.NewModel, or a custom one.
+	Model model.LLM
 
 	// RemoteCrewMembers lists optional remote agent endpoints for
 	// implementation, validation, or specialist work exposed over A2A.
@@ -287,10 +284,11 @@ type RemoteCrewMember struct {
 // collaboration modes, delegation, tool confirmation for human approval gates,
 // and optional A2A remote crew members.
 func NewCrew(ctx context.Context, cfg CrewConfig) (agent.Agent, error) {
-	model, err := gemini.NewModel(ctx, cfg.ModelName, cfg.GeminiClientConfig)
-	if err != nil {
-		return nil, fmt.Errorf("shipcrew: failed to create model: %w", err)
+	if cfg.Model == nil {
+		return nil, fmt.Errorf("shipcrew: Model is required")
 	}
+
+	llm := cfg.Model
 
 	// Build role-specific tools.
 	scoutTools, err := newScoutTools()
@@ -322,7 +320,7 @@ func NewCrew(ctx context.Context, cfg CrewConfig) (agent.Agent, error) {
 	// automatically returns to skipper when done.
 	scout, err := llmagent.New(llmagent.Config{
 		Name:        ScoutName,
-		Model:       model,
+		Model:       llm,
 		Mode:        llmagent.ModeTask,
 		Description: "Reads assigned GitHub issues and extracts constraints, acceptance criteria, open questions, and expected outputs.",
 		Instruction: `You are the scout. Your job is to:
@@ -340,7 +338,7 @@ Do not modify any files. Do not run any commands.`,
 	// returns automatically. Can run in parallel with peer agents.
 	builder, err := llmagent.New(llmagent.Config{
 		Name:        BuilderName,
-		Model:       model,
+		Model:       llm,
 		Mode:        llmagent.ModeSingleTurn,
 		Description: "Performs scoped implementation work using only exposed ADK tools, MCP toolsets, or direct API capabilities.",
 		Instruction: `You are the builder. Your job is to:
@@ -359,7 +357,7 @@ You must not merge pull requests or bypass branch protection.`,
 	// Prover: single_turn mode.
 	prover, err := llmagent.New(llmagent.Config{
 		Name:        ProverName,
-		Model:       model,
+		Model:       llm,
 		Mode:        llmagent.ModeSingleTurn,
 		Description: "Validates work through approved ADK tools, MCP toolsets, or direct API integrations and reports results.",
 		Instruction: `You are the prover. Your job is to:
@@ -376,7 +374,7 @@ Validation runs through approved ADK tools and API integrations only.`,
 	// Critic: single_turn mode.
 	critic, err := llmagent.New(llmagent.Config{
 		Name:        CriticName,
-		Model:       model,
+		Model:       llm,
 		Mode:        llmagent.ModeSingleTurn,
 		Description: "Reviews changes against the issue, regressions, missing tests, risks, and policy boundaries.",
 		Instruction: `You are the critic. Your job is to:
@@ -393,7 +391,7 @@ You must not approve or merge pull requests. Final approval and merge remain hum
 	// Herald: single_turn mode.
 	herald, err := llmagent.New(llmagent.Config{
 		Name:        HeraldName,
-		Model:       model,
+		Model:       llm,
 		Mode:        llmagent.ModeSingleTurn,
 		Description: "Summarizes outcomes, validation, residual risks, and comments on tasks or PRs when appropriate.",
 		Instruction: `You are the herald. Your job is to:
@@ -411,7 +409,7 @@ Do not merge or approve PRs.`,
 	// and proposes evidence-backed follow-up tasks.
 	retro, err := llmagent.New(llmagent.Config{
 		Name:        RetroName,
-		Model:       model,
+		Model:       llm,
 		Mode:        llmagent.ModeSingleTurn,
 		Description: "Reviews completed runs, identifies defects in prompts/tools/workflows/evaluations, and proposes evidence-backed follow-up tasks.",
 		Instruction: `You are the retro. Your job is to:
@@ -458,7 +456,7 @@ You must not silently modify agent instructions, tools, permissions, or workflow
 	// ADK auto-generates delegation tools named after each subagent.
 	skipper, err := llmagent.New(llmagent.Config{
 		Name:  SkipperName,
-		Model: model,
+		Model: llm,
 		Description: `Skipper of the Sovereignite crew.
 Receives task requests, delegates to crew members, tracks handoffs,
 and keeps human-controlled gates explicit.`,
