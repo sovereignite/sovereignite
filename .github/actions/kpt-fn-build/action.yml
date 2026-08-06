@@ -1,0 +1,53 @@
+name: 'kpt Function Build'
+description: 'Build, scan, sign, and attest a kpt KRM function'
+inputs:
+  import-path:
+    description: 'Go import path for the function'
+    required: true
+  tag:
+    description: 'Image tag (defaults to branch name)'
+    required: false
+    default: ''
+  go-version-file:
+    description: 'Path to go.mod for Go version detection'
+    required: false
+    default: 'go.mod'
+outputs:
+  image:
+    description: 'Image reference (without tag/digest)'
+    value: ${{ steps.build.outputs.image }}
+  digest:
+    description: 'Image digest'
+    value: ${{ steps.build.outputs.digest }}
+runs:
+  using: "composite"
+  steps:
+    - name: Setup ko
+      uses: ./.github/actions/ko-setup
+      with:
+        go-version-file: ${{ inputs.go-version-file }}
+
+    - name: Build and push
+      id: build
+      uses: ./.github/actions/ko-build
+      with:
+        import-path: ${{ inputs.import-path }}
+        tag: ${{ inputs.tag }}
+
+    - name: Scan image
+      uses: ./.github/actions/image-scan
+      with:
+        image: ${{ steps.build.outputs.image }}
+        digest: ${{ steps.build.outputs.digest }}
+
+    - name: Sign image
+      uses: ./.github/actions/image-sign
+      with:
+        image: ${{ steps.build.outputs.image }}
+        digest: ${{ steps.build.outputs.digest }}
+
+    - name: Attest provenance
+      uses: ./.github/actions/image-attest
+      with:
+        image: ${{ steps.build.outputs.image }}
+        digest: ${{ steps.build.outputs.digest }}

@@ -1,0 +1,59 @@
+name: Build kpt-fn-provenance
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'kubernetes/sovereignite.net/kpt-functions/provenance/**'
+      - '.github/workflows/kpt-fn-provenance.yaml'
+      - '.github/actions/kpt-fn-build/**'
+      - '.github/actions/ko-*/**'
+      - '.github/actions/image-*/**'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'kubernetes/sovereignite.net/kpt-functions/provenance/**'
+      - '.github/workflows/kpt-fn-provenance.yaml'
+      - '.github/actions/kpt-fn-build/**'
+      - '.github/actions/ko-*/**'
+      - '.github/actions/image-*/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+  security-events: write
+  issues: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build kpt function
+        id: build
+        uses: ./.github/actions/kpt-fn-build
+        with:
+          import-path: ./kubernetes/sovereignite.net/kpt-functions/provenance
+
+  notify-failure:
+    if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Build failed: kpt-fn-provenance (${context.sha.substring(0, 7)})`,
+              body: `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['ci-failure', 'kpt-fn']
+            })
