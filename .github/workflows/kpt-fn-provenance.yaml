@@ -3,20 +3,8 @@ name: Build kpt-fn-provenance
 on:
   push:
     branches: [master, 'feature/**']
-    paths:
-      - 'kubernetes/sovereignite.net/kpt-functions/provenance/**'
-      - '.github/workflows/kpt-fn-provenance.yaml'
-      - '.github/actions/kpt-fn-build/**'
-      - '.github/actions/ko-*/**'
-      - '.github/actions/image-*/**'
   pull_request:
     branches: [master, 'feature/**']
-    paths:
-      - 'kubernetes/sovereignite.net/kpt-functions/provenance/**'
-      - '.github/workflows/kpt-fn-provenance.yaml'
-      - '.github/actions/kpt-fn-build/**'
-      - '.github/actions/ko-*/**'
-      - '.github/actions/image-*/**'
   workflow_dispatch:
 
 permissions:
