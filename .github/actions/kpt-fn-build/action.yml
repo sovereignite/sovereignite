@@ -12,6 +12,9 @@ inputs:
     description: 'Path to go.mod for Go version detection'
     required: false
     default: 'go.mod'
+  token:
+    description: 'GitHub token for GHCR login'
+    required: true
 outputs:
   image:
     description: 'Image reference (without tag/digest)'
@@ -35,15 +38,18 @@ runs:
       with:
         image: ${{ steps.build.outputs.image }}
         digest: ${{ steps.build.outputs.digest }}
+        token: ${{ inputs.token }}
 
     - name: Sign image
       uses: ./.github/actions/image-sign
       with:
         image: ${{ steps.build.outputs.image }}
         digest: ${{ steps.build.outputs.digest }}
+        token: ${{ inputs.token }}
 
     - name: Attest provenance
       uses: ./.github/actions/image-attest
       with:
         image: ${{ steps.build.outputs.image }}
         digest: ${{ steps.build.outputs.digest }}
+        token: ${{ inputs.token }}

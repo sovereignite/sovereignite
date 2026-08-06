@@ -11,6 +11,9 @@ inputs:
     description: 'Fail build on vulnerabilities'
     required: false
     default: 'true'
+  token:
+    description: 'GitHub token for GHCR login'
+    required: true
 outputs:
   sarif:
     description: 'Path to SARIF report'
@@ -23,7 +26,7 @@ runs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ inputs.token }}
 
     - name: Scan image
       id: scan

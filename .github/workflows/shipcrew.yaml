@@ -64,6 +64,7 @@ jobs:
         with:
           image: ${{ needs.build.outputs.image }}
           digest: ${{ needs.build.outputs.digest }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   sign:
     needs: [build, scan]
@@ -76,6 +77,7 @@ jobs:
         with:
           image: ${{ needs.build.outputs.image }}
           digest: ${{ needs.build.outputs.digest }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   attest:
     needs: [build, sign]
@@ -88,6 +90,7 @@ jobs:
         with:
           image: ${{ needs.build.outputs.image }}
           digest: ${{ needs.build.outputs.digest }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   package:
     needs: build
