@@ -2,7 +2,7 @@ name: Build kpt-fn-provenance
 
 on:
   push:
-    branches: [master]
+    branches: [master, 'feature/**']
     paths:
       - 'kubernetes/sovereignite.net/kpt-functions/provenance/**'
       - '.github/workflows/kpt-fn-provenance.yaml'
@@ -10,7 +10,7 @@ on:
       - '.github/actions/ko-*/**'
       - '.github/actions/image-*/**'
   pull_request:
-    branches: [master]
+    branches: [master, 'feature/**']
     paths:
       - 'kubernetes/sovereignite.net/kpt-functions/provenance/**'
       - '.github/workflows/kpt-fn-provenance.yaml'
