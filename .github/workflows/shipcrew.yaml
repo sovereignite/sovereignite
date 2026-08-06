@@ -1,22 +1,10 @@
-name: Build shipcrew
+name: shipcrew
 
 on:
   push:
-    branches: [master]
-    paths:
-      - 'cmd/shipcrew/**'
-      - 'internal/shipcrew/**'
-      - '.github/workflows/shipcrew.yaml'
-      - 'go.mod'
-      - 'go.sum'
+    branches: [master, 'feature/**']
   pull_request:
-    branches: [master]
-    paths:
-      - 'cmd/shipcrew/**'
-      - 'internal/shipcrew/**'
-      - '.github/workflows/shipcrew.yaml'
-      - 'go.mod'
-      - 'go.sum'
+    branches: [master, 'feature/**']
   workflow_dispatch:
 
 permissions:
@@ -38,7 +26,7 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Lint
+      - name: "Lint"
         uses: golangci/golangci-lint-action@v9
         with:
           version: latest
@@ -54,13 +42,13 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install gotestsum
+      - name: "Install"
         run: go install gotest.tools/gotestsum@latest
 
-      - name: Test
+      - name: "Test"
         run: gotestsum --junitfile reports/tests.xml --format standard-verbose -- -short ./internal/shipcrew/...
 
-      - name: Upload test report
+      - name: "Report"
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -76,82 +64,80 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-
-      - uses: ko-build/setup-ko@v0.10
-
-      - name: Build and push
+      - name: "Build"
         id: build
-        run: |
-          TAG=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
-          REF=$(ko build --tags "$TAG" --base-import-paths ./cmd/shipcrew)
-          echo "digest=$(echo "$REF" | grep -oP 'sha256:[a-f0-9]+')" >> "$GITHUB_OUTPUT"
-          echo "image=$(echo "$REF" | sed 's/[:@].*//')" >> "$GITHUB_OUTPUT"
+        uses: ./.github/actions/ko-build
+        with:
+          import-path: ./cmd/shipcrew
 
   scan:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v7
 
-      - uses: anchore/scan-action@v7
-        id: scan
+      - name: "Scan"
+        uses: ./.github/actions/image-scan
         with:
-          image: ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
-          fail-build: true
-          output-format: sarif
-
-      - uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
-
-      - name: Upload SARIF report
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: sarif-report
-          path: ${{ steps.scan.outputs.sarif }}
+          image: ${{ needs.build.outputs.image }}
+          digest: ${{ needs.build.outputs.digest }}
 
   sign:
     needs: [build, scan]
     runs-on: ubuntu-latest
     steps:
-      - uses: docker/login-action@v4
+      - uses: actions/checkout@v7
+
+      - name: "Sign"
+        uses: ./.github/actions/image-sign
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: sigstore/cosign-installer@v4.1.0
-
-      - run: cosign sign --yes ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+          image: ${{ needs.build.outputs.image }}
+          digest: ${{ needs.build.outputs.digest }}
 
   attest:
     needs: [build, sign]
     runs-on: ubuntu-latest
     steps:
-      - uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v7
 
-      - uses: actions/attest-build-provenance@v4
+      - name: "Attest"
+        uses: ./.github/actions/image-attest
         with:
-          subject-name: ${{ needs.build.outputs.image }}
-          subject-digest: ${{ needs.build.outputs.digest }}
-          push-to-registry: true
+          image: ${{ needs.build.outputs.image }}
+          digest: ${{ needs.build.outputs.digest }}
+
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Setup"
+        uses: ./.github/actions/kpt-setup
+
+      - name: "Render"
+        uses: ./.github/actions/kpt-render
+        with:
+          package_path: kubernetes/sovereignite.net/adk/shipcrew
+
+      - name: "Validate"
+        uses: ./.github/actions/kpt-kubeconform
+        with:
+          package_path: kubernetes/sovereignite.net/adk/shipcrew
+
+      - name: "Policy"
+        uses: ./.github/actions/kpt-gatekeeper
+        with:
+          package_path: kubernetes/sovereignite.net/adk/shipcrew
+
+      - name: "Provenance"
+        uses: ./.github/actions/kpt-provenance
+        with:
+          package_path: kubernetes/sovereignite.net/adk/shipcrew
 
   notify-failure:
     if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
-    needs: [lint, test, build, scan, sign, attest]
+    needs: [lint, test, build, scan, sign, attest, package]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v9
