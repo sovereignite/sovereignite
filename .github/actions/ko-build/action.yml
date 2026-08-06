@@ -1,0 +1,31 @@
+name: 'ko Build'
+description: 'Build and push image with ko'
+inputs:
+  import-path:
+    description: 'Go import path to build'
+    required: true
+  tag:
+    description: 'Image tag (defaults to branch name)'
+    required: false
+    default: ''
+outputs:
+  image:
+    description: 'Image reference (without tag/digest)'
+    value: ${{ steps.build.outputs.image }}
+  digest:
+    description: 'Image digest'
+    value: ${{ steps.build.outputs.digest }}
+runs:
+  using: "composite"
+  steps:
+    - name: Build and push
+      id: build
+      run: |
+        TAG="${{ inputs.tag }}"
+        if [ -z "$TAG" ]; then
+          TAG=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
+        fi
+        REF=$(ko build --tags "$TAG" --base-import-paths "${{ inputs.import-path }}")
+        echo "digest=$(echo "$REF" | grep -oP 'sha256:[a-f0-9]+')" >> "$GITHUB_OUTPUT"
+        echo "image=$(echo "$REF" | sed 's/[:@].*//')" >> "$GITHUB_OUTPUT"
+      shell: bash

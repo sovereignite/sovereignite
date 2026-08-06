@@ -1,0 +1,7 @@
+name: 'kpt Setup'
+description: 'Setup kpt CLI'
+runs:
+  using: "composite"
+  steps:
+    - name: Setup kpt
+      uses: kptdev/kpt-github-actions/setup@v1

@@ -9,13 +9,13 @@ on:
     paths:
       - 'kubernetes/sovereignite.net/adk/shipcrew/**'
       - '.github/workflows/kpt-shipcrew.yaml'
-      - '.github/workflows/kpt-validate.yaml'
+      - '.github/actions/kpt-*/**'
   pull_request:
     branches: [master]
     paths:
       - 'kubernetes/sovereignite.net/adk/shipcrew/**'
       - '.github/workflows/kpt-shipcrew.yaml'
-      - '.github/workflows/kpt-validate.yaml'
+      - '.github/actions/kpt-*/**'
   workflow_dispatch:
 
 permissions:
@@ -28,14 +28,27 @@ permissions:
 
 jobs:
   validate:
-    uses: ./.github/workflows/kpt-validate.yaml
-    with:
-      package_path: kubernetes/sovereignite.net/adk/shipcrew
-      kubernetes_version: '1.36'
-      strict_mode: true
-      enable_schema_validation: true
-      enable_policy_validation: false
-      enable_render: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup kpt
+        uses: ./.github/actions/kpt-setup
+
+      - name: Render package
+        uses: ./.github/actions/kpt-render
+        with:
+          package_path: kubernetes/sovereignite.net/adk/shipcrew
+
+      - name: Validate with kubeconform
+        uses: ./.github/actions/kpt-kubeconform
+        with:
+          package_path: kubernetes/sovereignite.net/adk/shipcrew
+
+      - name: Validate with gatekeeper
+        uses: ./.github/actions/kpt-gatekeeper
+        with:
+          package_path: kubernetes/sovereignite.net/adk/shipcrew
 
   notify-failure:
     if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'

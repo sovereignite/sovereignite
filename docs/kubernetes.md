@@ -1,12 +1,52 @@
 # Kubernetes
 
-DaemonSets are under `kubernetes/sovereignite.io/<service>/` with the
-`source/`→`localized/` pattern. Edit values in `source/kustomization.yaml`
-and render with:
+## Reusable Process
 
-```bash
-kustomize build kubernetes/sovereignite.io/keymanager/source
+Directory structure = label hierarchy.
+
+kustomization.yaml applies labels at each level.
+
+kpt validates the structure.
+
+Gatekeeper validates labels match directory paths.
+
+### Pattern
+
 ```
+<any-domain>/
+├── kustomization.yaml
+│   └── app.kubernetes.io/part-of: <domain>
+│
+└── <app>/
+    ├── kustomization.yaml
+    │   └── app.kubernetes.io/name: <app>
+    │
+    ├── <component>/
+    │   ├── kustomization.yaml
+    │   │   └── app.kubernetes.io/component: <component>
+    │   │
+    │   └── <instance>/
+    │       ├── kustomization.yaml
+    │       │   └── app.kubernetes.io/instance: <instance>
+    │       │
+    │       └── *.yaml
+    │
+    └── <component>/
+        ├── kustomization.yaml
+        │   └── app.kubernetes.io/component: <component>
+        │
+        └── <instance>/
+            ├── kustomization.yaml
+            │   └── app.kubernetes.io/instance: <instance>
+            │
+            └── *.yaml
+```
+
+### Gatekeeper Validates
+
+- Directory path = label values
+- kustomization.yaml applies label for its level
+- Resources in correct directories
 
 ## Dependency Chain
 

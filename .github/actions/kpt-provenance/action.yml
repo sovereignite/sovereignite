@@ -1,0 +1,16 @@
+name: 'kpt Provenance'
+description: 'Generate provenance report for kpt package'
+inputs:
+  package_path:
+    description: 'Path to kpt package directory'
+    required: true
+  output_path:
+    description: 'Path to write provenance report'
+    required: false
+    default: 'provenance-report.yaml'
+runs:
+  using: "composite"
+  steps:
+    - name: Generate provenance report
+      run: kpt fn eval "${{ inputs.package_path }}" -i ghcr.io/sovereignite/kpt-fn-provenance:latest --output-results "${{ inputs.output_path }}"
+      shell: bash

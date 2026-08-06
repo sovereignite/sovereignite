@@ -1,0 +1,25 @@
+name: 'Image Sign'
+description: 'Sign container image with cosign'
+inputs:
+  image:
+    description: 'Image reference (without digest)'
+    required: true
+  digest:
+    description: 'Image digest'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Login to GHCR
+      uses: docker/login-action@v4
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install cosign
+      uses: sigstore/cosign-installer@v4.1.0
+
+    - name: Sign image
+      run: cosign sign --yes ${{ inputs.image }}@${{ inputs.digest }}
+      shell: bash

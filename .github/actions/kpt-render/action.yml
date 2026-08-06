@@ -1,0 +1,12 @@
+name: 'kpt Render'
+description: 'Render kpt package'
+inputs:
+  package_path:
+    description: 'Path to kpt package directory'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Render package
+      run: kpt fn render "${{ inputs.package_path }}"
+      shell: bash
