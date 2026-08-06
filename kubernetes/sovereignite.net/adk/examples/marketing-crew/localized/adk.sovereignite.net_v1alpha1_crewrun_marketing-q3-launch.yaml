@@ -1,0 +1,14 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: CrewRun
+metadata:
+  name: marketing-q3-launch
+  namespace: marketing-crew
+spec:
+  crewRef: marketing-team
+  message:
+    text: |
+      We're launching our new secure Kubernetes platform next month. Target audience: DevOps teams and security engineers at mid-size enterprises. Need full campaign: blog post, email sequence, social media plan, and landing page copy. Budget: $15K. Focus on TPM-backed security as differentiator.
+  saveInputBlobsAsArtifacts: false
+  sessionID: q3-product-launch
+  streamingMode: sse
+  userID: marketing-director

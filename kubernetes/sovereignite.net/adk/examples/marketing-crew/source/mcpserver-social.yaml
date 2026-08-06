@@ -1,0 +1,15 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: MCPServer
+metadata:
+  name: social-tools
+  namespace: marketing-crew
+spec:
+  transport: streamable-http
+  endpoint: https://mcp.example.com/social
+  requireConfirmation: true
+  toolFilter:
+    allow:
+      - schedule_post
+      - get_engagement
+      - list_trending
+      - audience_insights

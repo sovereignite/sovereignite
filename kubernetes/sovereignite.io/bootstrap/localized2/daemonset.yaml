@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: bootstrap
+  namespace: sovereignite-system
+  labels:
+    app.kubernetes.io/name: bootstrap
+    app.kubernetes.io/part-of: sovereignite
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bootstrap
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bootstrap
+        app.kubernetes.io/part-of: sovereignite
+    spec:
+      serviceAccountName: bootstrap
+      initContainers:
+        - name: wait-trust
+          image: busybox:latest
+          command: ["sh", "-c", "test -f /run/sovereignite/trust/ready.json || exit 1"]
+          volumeMounts:
+            - name: trust-runtime
+              mountPath: /run/sovereignite/trust
+              readOnly: true
+      containers:
+        - name: bootstrap
+          image: ghcr.io/sovereignite/bootstrap:v0.0.0
+          securityContext:
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsUser: 0
+            runAsGroup: 0
+          volumeMounts:
+            - name: bootstrap-state
+              mountPath: /var/lib/sovereignite/bootstrap
+            - name: bootstrap-runtime
+              mountPath: /run/sovereignite/bootstrap
+            - name: trust-runtime
+              mountPath: /run/sovereignite/trust
+              readOnly: true
+            - name: keymanager-runtime
+              mountPath: /run/sovereignite/keymanager
+              readOnly: true
+            - name: kubernetes-config
+              mountPath: /etc/kubernetes
+            - name: kubelet-lib
+              mountPath: /var/lib/kubelet
+            - name: containerd-socket
+              mountPath: /run/containerd/containerd.sock
+              readOnly: true
+      volumes:
+        - name: bootstrap-state
+          hostPath:
+            path: /var/lib/sovereignite/bootstrap
+            type: DirectoryOrCreate
+        - name: bootstrap-runtime
+          emptyDir: {}
+        - name: trust-runtime
+          hostPath:
+            path: /run/sovereignite/trust
+            type: Directory
+        - name: keymanager-runtime
+          hostPath:
+            path: /run/sovereignite/keymanager
+            type: Directory
+        - name: kubernetes-config
+          hostPath:
+            path: /etc/kubernetes
+            type: DirectoryOrCreate
+        - name: kubelet-lib
+          hostPath:
+            path: /var/lib/kubelet
+            type: DirectoryOrCreate
+        - name: containerd-socket
+          hostPath:
+            path: /run/containerd/containerd.sock
+            type: Socket

@@ -1,0 +1,24 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: MCPServer
+metadata:
+  name: local-fs
+  namespace: research-crew
+spec:
+  command:
+  - /usr/local/bin/mcp-filesystem
+  - --root
+  - /data
+  env:
+  - name: MCP_LOG_LEVEL
+    value: info
+  - name: MCP_TOKEN
+    valueFrom:
+      secretRef:
+        key: token
+        name: mcp-fs-token
+  requireConfirmation: true
+  toolFilter:
+    deny:
+    - delete_file
+    - rm
+  transport: stdio

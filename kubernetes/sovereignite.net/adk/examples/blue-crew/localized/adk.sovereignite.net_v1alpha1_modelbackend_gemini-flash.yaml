@@ -1,0 +1,11 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: ModelBackend
+metadata:
+  name: gemini-flash
+  namespace: blue-crew
+spec:
+  apiKeyRef:
+    key: key
+    name: gemini-api-key
+  model: gemini-2.0-flash
+  provider: gemini

@@ -1,0 +1,14 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: MCPServer
+metadata:
+  name: web-tools
+  namespace: research-crew
+spec:
+  endpoint: https://mcp.example.com/mcp
+  requireConfirmation: false
+  toolFilter:
+    allow:
+    - search
+    - fetch_url
+    - summarize
+  transport: streamable-http

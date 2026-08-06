@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: shipcrew-controller
+  name: shipcrew-controller
+  namespace: shipcrew
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shipcrew-controller
+  template:
+    metadata:
+      labels:
+        app: shipcrew-controller
+    spec:
+      containers:
+      - args:
+        - controller
+        env:
+        - name: GOOGLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: api-key
+              name: gemini-creds
+              optional: true
+        image: ghcr.io/sovereignite/shipcrew:latest
+        name: controller
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+      serviceAccountName: shipcrew-controller

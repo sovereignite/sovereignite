@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- apps_v1_deployment_shipcrew-controller.yaml
+- rbac.authorization.k8s.io_v1_clusterrole_shipcrew-controller.yaml
+- rbac.authorization.k8s.io_v1_clusterrolebinding_shipcrew-controller.yaml
+- v1_namespace_shipcrew.yaml
+- v1_serviceaccount_shipcrew-controller.yaml

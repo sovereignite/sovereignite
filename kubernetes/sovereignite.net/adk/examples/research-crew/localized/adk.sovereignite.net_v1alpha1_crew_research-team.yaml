@@ -1,0 +1,70 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: Crew
+metadata:
+  name: research-team
+  namespace: research-crew
+spec:
+  appName: research-app
+  members:
+  - description: Breaks down complex questions and delegates subtasks.
+    disallowTransferToParent: true
+    disallowTransferToPeers: false
+    generateContentConfig:
+      maxOutputTokens: 4096
+      temperature: 0.3
+    includeContents: default
+    instruction: |
+      You are the research coordinator. Decompose the user's question into subtasks, delegate to your team, and synthesize a final answer. Use {user_context} from session state to personalize responses.
+    mode: task
+    modelRef: gemini-flash
+    name: coordinator
+    outputKey: coordinator_result
+    subAgents:
+    - researcher
+    - summarizer
+    tools:
+    - search
+  - description: Performs focused research on a single topic.
+    disallowTransferToParent: false
+    disallowTransferToPeers: true
+    includeContents: none
+    inputSchema:
+      properties:
+        question:
+          type: string
+      required:
+      - question
+      type: object
+    instruction: |
+      You are a researcher. Answer the assigned question concisely with citations. Output must conform to the output schema.
+    mode: single_turn
+    modelRef: gemini-flash
+    name: researcher
+    outputSchema:
+      properties:
+        answer:
+          type: string
+        sources:
+          items:
+            type: string
+          type: array
+      required:
+      - answer
+      type: object
+    tools:
+    - search
+    toolsets:
+    - web-tools
+  - description: Summarizes research into a user-friendly format.
+    disallowTransferToParent: true
+    disallowTransferToPeers: true
+    generateContentConfig:
+      temperature: 0.7
+      topP: 0.9
+    instruction: |
+      Summarize the research results from {researcher_output} into a clear, concise report.
+    mode: chat
+    modelRef: local-llama
+    name: summarizer
+    outputKey: final_summary
+  modelRef: gemini-flash

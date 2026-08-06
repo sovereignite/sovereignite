@@ -1,0 +1,16 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: CrewRun
+metadata:
+  name: red-engagement-001
+  namespace: red-crew
+spec:
+  crewRef: red-team
+  userID: operator-alpha
+  sessionID: engagement-001
+  message:
+    text: >
+      Scope: External penetration test against example-corp.com.
+      Focus on internet-facing infrastructure. Identify critical
+      vulnerabilities and provide exploitation roadmap.
+  streamingMode: sse
+  saveInputBlobsAsArtifacts: true

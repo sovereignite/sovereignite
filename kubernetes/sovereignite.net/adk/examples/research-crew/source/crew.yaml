@@ -1,0 +1,76 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: Crew
+metadata:
+  name: research-team
+  namespace: research-crew
+spec:
+  appName: research-app
+  modelRef: gemini-flash
+  members:
+    - name: coordinator
+      mode: task
+      description: Breaks down complex questions and delegates subtasks.
+      instruction: >
+        You are the research coordinator. Decompose the user's question
+        into subtasks, delegate to your team, and synthesize a final answer.
+        Use {user_context} from session state to personalize responses.
+      modelRef: gemini-flash
+      subAgents:
+        - researcher
+        - summarizer
+      tools:
+        - search
+      generateContentConfig:
+        temperature: 0.3
+        maxOutputTokens: 4096
+      includeContents: default
+      disallowTransferToParent: true
+      disallowTransferToPeers: false
+      outputKey: coordinator_result
+
+    - name: researcher
+      mode: single_turn
+      description: Performs focused research on a single topic.
+      instruction: >
+        You are a researcher. Answer the assigned question concisely with
+        citations. Output must conform to the output schema.
+      modelRef: gemini-flash
+      toolsets:
+        - web-tools
+      tools:
+        - search
+      includeContents: none
+      disallowTransferToParent: false
+      disallowTransferToPeers: true
+      inputSchema:
+        type: object
+        properties:
+          question:
+            type: string
+        required:
+          - question
+      outputSchema:
+        type: object
+        properties:
+          answer:
+            type: string
+          sources:
+            type: array
+            items:
+              type: string
+        required:
+          - answer
+
+    - name: summarizer
+      mode: chat
+      description: Summarizes research into a user-friendly format.
+      instruction: >
+        Summarize the research results from {researcher_output} into a
+        clear, concise report.
+      modelRef: local-llama
+      generateContentConfig:
+        temperature: 0.7
+        topP: 0.9
+      disallowTransferToParent: true
+      disallowTransferToPeers: true
+      outputKey: final_summary

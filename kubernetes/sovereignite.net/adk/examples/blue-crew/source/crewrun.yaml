@@ -1,0 +1,16 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: CrewRun
+metadata:
+  name: blue-incident-001
+  namespace: blue-crew
+spec:
+  crewRef: blue-team
+  userID: analyst-bravo
+  sessionID: incident-001
+  message:
+    text: >
+      Alert: Suspicious lateral movement detected from 10.0.1.50 to
+      multiple internal hosts on port 445. Source host compromised
+      via phishing email 2 hours ago. Investigate and contain.
+  streamingMode: sse
+  saveInputBlobsAsArtifacts: true
