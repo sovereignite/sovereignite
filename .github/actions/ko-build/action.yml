@@ -8,6 +8,10 @@ inputs:
     description: 'Image tag (defaults to branch name)'
     required: false
     default: ''
+  go-version-file:
+    description: 'Path to go.mod for Go version detection'
+    required: false
+    default: 'go.mod'
 outputs:
   image:
     description: 'Image reference (without tag/digest)'
@@ -18,6 +22,14 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Setup Go
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: ${{ inputs.go-version-file }}
+
+    - name: Setup ko
+      uses: ko-build/setup-ko@v0.10
+
     - name: Build and push
       id: build
       run: |

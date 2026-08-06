@@ -22,17 +22,13 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup ko
-      uses: ./.github/actions/ko-setup
-      with:
-        go-version-file: ${{ inputs.go-version-file }}
-
     - name: Build and push
       id: build
       uses: ./.github/actions/ko-build
       with:
         import-path: ${{ inputs.import-path }}
         tag: ${{ inputs.tag }}
+        go-version-file: ${{ inputs.go-version-file }}
 
     - name: Scan image
       uses: ./.github/actions/image-scan
