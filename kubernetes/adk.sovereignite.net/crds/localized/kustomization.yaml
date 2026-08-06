@@ -3,3 +3,5 @@ kind: Kustomization
 resources:
   - apiextensions.k8s.io_v1_customresourcedefinition_modelbackends.adk.sovereignite.net.yaml
   - apiextensions.k8s.io_v1_customresourcedefinition_crews.adk.sovereignite.net.yaml
+  - apiextensions.k8s.io_v1_customresourcedefinition_crewruns.adk.sovereignite.net.yaml
+  - apiextensions.k8s.io_v1_customresourcedefinition_mcpservers.adk.sovereignite.net.yaml

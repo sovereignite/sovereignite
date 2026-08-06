@@ -5,22 +5,33 @@
 package v1alpha1
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
 var (
 	// GroupVersion is the API group and version for this package.
 	GroupVersion = schema.GroupVersion{Group: "adk.sovereignite.net", Version: "v1alpha1"}
 
-	// SchemeBuilder is used to add Go types to the GroupVersionResource scheme.
-	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
+	// SchemeBuilder is used to add Go types to the runtime scheme.
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
 )
 
-func init() {
-	SchemeBuilder.Register(&ModelBackend{}, &ModelBackendList{})
-	SchemeBuilder.Register(&Crew{}, &CrewList{})
+func addKnownTypes(scheme *runtime.Scheme) error {
+	scheme.AddKnownTypes(GroupVersion,
+		&ModelBackend{},
+		&ModelBackendList{},
+		&Crew{},
+		&CrewList{},
+		&CrewRun{},
+		&CrewRunList{},
+		&MCPServer{},
+		&MCPServerList{},
+		&Workflow{},
+		&WorkflowList{},
+	)
+	return nil
 }

@@ -4,10 +4,10 @@ metadata:
   name: shipcrew-controller
 rules:
   - apiGroups: ["adk.sovereignite.net"]
-    resources: ["modelbackends", "crews"]
+    resources: ["modelbackends", "crews", "crewruns", "mcpservers"]
     verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: ["adk.sovereignite.net"]
-    resources: ["modelbackends/status", "crews/status"]
+    resources: ["modelbackends/status", "crews/status", "crewruns/status", "mcpservers/status"]
     verbs: ["get", "update", "patch"]
   - apiGroups: [""]
     resources: ["secrets"]

@@ -45,9 +45,11 @@ import (
 	"google.golang.org/adk/v2/session"
 	"google.golang.org/genai"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	adkv1alpha1 "github.com/sovereignite/sovereignite/internal/shipcrew/api/v1alpha1"
 	"github.com/sovereignite/sovereignite/internal/shipcrew"
+	"github.com/sovereignite/sovereignite/internal/shipcrew/controller"
 )
 
 func main() {
@@ -117,7 +119,7 @@ func buildModelFromConfig(ctx context.Context, path string) (model.LLM, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open config: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	docs := splitYAML(f)
 	for _, doc := range docs {
@@ -307,6 +309,38 @@ func runServer(ctx context.Context, skipper agent.Agent, port int) {
 }
 
 func runController() {
-	log.Println("controller mode not yet implemented — use --config for local CRD execution")
-	os.Exit(1)
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{})
+	if err != nil {
+		log.Fatalf("manager: %v", err)
+	}
+
+	registry := controller.NewRunnerRegistry()
+
+	if err := (&controller.ModelBackendReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		log.Fatalf("ModelBackendReconciler: %v", err)
+	}
+
+	if err := (&controller.CrewReconciler{
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+		Runners: registry,
+	}).SetupWithManager(mgr); err != nil {
+		log.Fatalf("CrewReconciler: %v", err)
+	}
+
+	if err := (&controller.CrewRunReconciler{
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+		Runners: registry,
+	}).SetupWithManager(mgr); err != nil {
+		log.Fatalf("CrewRunReconciler: %v", err)
+	}
+
+	log.Println("starting shipcrew controller")
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		log.Fatalf("controller: %v", err)
+	}
 }

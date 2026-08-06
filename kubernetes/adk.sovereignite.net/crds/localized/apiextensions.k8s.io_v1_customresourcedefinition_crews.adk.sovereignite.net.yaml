@@ -29,7 +29,7 @@ spec:
       schema:
         openAPIV3Schema:
           type: object
-          description: Crew describes a team of ADK agents.
+          description: Crew describes a team of ADK LlmAgents backed by a runner.
           properties:
             apiVersion:
               type: string
@@ -43,9 +43,12 @@ spec:
                 - modelRef
                 - members
               properties:
+                appName:
+                  type: string
+                  description: Application name for session namespacing. Defaults to Crew name.
                 modelRef:
                   type: string
-                  description: Name of the ModelBackend resource.
+                  description: Name of the default ModelBackend resource.
                 members:
                   type: array
                   minItems: 1
@@ -57,41 +60,57 @@ spec:
                     properties:
                       name:
                         type: string
+                        minLength: 1
+                      description:
+                        type: string
                       mode:
                         type: string
                         enum:
                           - chat
                           - task
                           - single_turn
-                      description:
+                      modelRef:
                         type: string
+                        description: Per-member ModelBackend override.
                       instruction:
                         type: string
+                      subAgents:
+                        type: array
+                        items:
+                          type: string
                       tools:
                         type: array
                         items:
                           type: string
-                remoteWorkers:
-                  type: array
-                  items:
-                    type: object
-                    required:
-                      - name
-                      - agentCardURL
-                    properties:
-                      name:
+                      toolsets:
+                        type: array
+                        items:
+                          type: string
+                      outputKey:
                         type: string
-                      description:
+                      generateContentConfig:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      inputSchema:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      outputSchema:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      includeContents:
                         type: string
-                      agentCardURL:
-                        type: string
+                        enum:
+                          - default
+                          - none
+                      disallowTransferToParent:
+                        type: boolean
+                      disallowTransferToPeers:
+                        type: boolean
             status:
               type: object
               properties:
                 ready:
                   type: boolean
-                activeRunID:
-                  type: string
                 conditions:
                   type: array
                   items:

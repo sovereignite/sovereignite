@@ -35,14 +35,6 @@ type ModelBackendSpec struct {
 	APIKeyRef *SecretKeyRef `json:"apiKeyRef,omitempty"`
 }
 
-// SecretKeyRef references a key in a Kubernetes Secret.
-type SecretKeyRef struct {
-	// Name is the secret name.
-	Name string `json:"name"`
-	// Key is the key within the secret.
-	Key string `json:"key"`
-}
-
 // ModelBackendStatus is the observed state of a ModelBackend.
 type ModelBackendStatus struct {
 	// Ready indicates whether the backend is reachable and configured.
