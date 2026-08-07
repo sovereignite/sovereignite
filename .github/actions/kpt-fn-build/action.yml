@@ -4,6 +4,9 @@ inputs:
   import-path:
     description: 'Go import path for the function'
     required: true
+  image-name:
+    description: 'Canonical image repository name'
+    required: true
   target-id:
     description: 'Stable logical target id used in artifact names'
     required: true
@@ -33,7 +36,7 @@ runs:
       uses: ./.github/actions/ko-build
       with:
         import-path: ${{ inputs.import-path }}
-        target-id: ${{ inputs.target-id }}
+        image-name: ${{ inputs.image-name }}
         tag: ${{ inputs.tag }}
         go-version-file: ${{ inputs.go-version-file }}
 

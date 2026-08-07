@@ -4,8 +4,8 @@ inputs:
   import-path:
     description: 'Go import path to build'
     required: true
-  target-id:
-    description: 'Stable logical target id used for the image repository name'
+  image-name:
+    description: 'Canonical image repository name'
     required: true
   tag:
     description: 'Image tag (defaults to branch name)'
@@ -40,7 +40,7 @@ runs:
         if [ -z "$TAG" ]; then
           TAG=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
         fi
-        export KO_DOCKER_REPO="ghcr.io/${GITHUB_REPOSITORY}/${{ inputs.target-id }}"
+        export KO_DOCKER_REPO="ghcr.io/${GITHUB_REPOSITORY%%/*}/${{ inputs.image-name }}"
         REF=$(ko build --tags "$TAG" --bare "${{ inputs.import-path }}")
         echo "digest=$(echo "$REF" | grep -oP 'sha256:[a-f0-9]+')" >> "$GITHUB_OUTPUT"
         echo "image=$(echo "$REF" | sed 's/[:@].*//')" >> "$GITHUB_OUTPUT"

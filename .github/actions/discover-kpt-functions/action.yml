@@ -53,12 +53,12 @@ runs:
         done
 
         if [ "${#selected[@]}" -eq 0 ]; then
-          echo 'functions=[{"path":"__skip__","id":"__skip__"}]' >> "$GITHUB_OUTPUT"
+            echo 'functions=[{"path":"__skip__","id":"__skip__","name":"__skip__"}]' >> "$GITHUB_OUTPUT"
           echo 'has-targets=false' >> "$GITHUB_OUTPUT"
         else
           functions=$(
             for function in "${selected[@]}"; do
-              jq -cn --arg path "$function" --arg id "$(function_id "$function")" '{path: $path, id: $id}'
+              jq -cn --arg path "$function" --arg id "$(function_id "$function")" --arg name "$(basename "$function")" '{path: $path, id: $id, name: $name}'
             done | jq -s -c .
           )
           echo "functions=$functions" >> "$GITHUB_OUTPUT"
