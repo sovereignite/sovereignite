@@ -9,9 +9,9 @@ runs:
   using: "composite"
   steps:
     - name: Setup Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v7
       with:
         go-version-file: ${{ inputs.go-version-file }}
 
     - name: Setup ko
-      uses: ko-build/setup-ko@v0.8
+      uses: ko-build/setup-ko@v0.10

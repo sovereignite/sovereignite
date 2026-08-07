@@ -22,7 +22,7 @@ runs:
   using: "composite"
   steps:
     - name: Login to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -30,7 +30,7 @@ runs:
 
     - name: Scan image
       id: scan
-      uses: anchore/scan-action@v6
+      uses: anchore/scan-action@v7
       with:
         image: ${{ inputs.image }}@${{ inputs.digest }}
         fail-build: ${{ inputs.fail-build }}
@@ -44,7 +44,7 @@ runs:
 
     - name: Upload SARIF artifact
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: sarif-report
         path: ${{ steps.scan.outputs.sarif }}

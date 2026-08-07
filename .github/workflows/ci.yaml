@@ -20,7 +20,7 @@ jobs:
     outputs:
       commands: ${{ steps.discover.outputs.commands }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Discover"
         id: discover
@@ -31,7 +31,7 @@ jobs:
     outputs:
       controllers: ${{ steps.discover.outputs.controllers }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Discover"
         id: discover
@@ -42,7 +42,7 @@ jobs:
     outputs:
       functions: ${{ steps.discover.outputs.functions }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Discover"
         id: discover
@@ -53,7 +53,7 @@ jobs:
     outputs:
       libraries: ${{ steps.discover.outputs.libraries }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Discover"
         id: discover
@@ -66,7 +66,7 @@ jobs:
       matrix:
         command: ${{ fromJson(needs.discover-go.outputs.commands) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Lint"
         uses: ./.github/actions/lint
@@ -80,7 +80,7 @@ jobs:
       matrix:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Lint"
         uses: ./.github/actions/lint
@@ -94,7 +94,7 @@ jobs:
       matrix:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Lint"
         uses: ./.github/actions/lint
@@ -108,7 +108,7 @@ jobs:
       matrix:
         library: ${{ fromJson(needs.discover-libraries.outputs.libraries) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Lint"
         uses: ./.github/actions/lint
@@ -122,7 +122,7 @@ jobs:
       matrix:
         command: ${{ fromJson(needs.discover-go.outputs.commands) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Test"
         uses: ./.github/actions/test
@@ -136,7 +136,7 @@ jobs:
       matrix:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Test"
         uses: ./.github/actions/test
@@ -150,7 +150,7 @@ jobs:
       matrix:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Test"
         uses: ./.github/actions/test
@@ -164,7 +164,7 @@ jobs:
       matrix:
         library: ${{ fromJson(needs.discover-libraries.outputs.libraries) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Test"
         uses: ./.github/actions/test
@@ -203,7 +203,7 @@ jobs:
     needs: [discover-go, discover-controllers, discover-kpt, discover-libraries, lint-go, lint-controllers, lint-kpt, lint-libraries, test-go, test-controllers, test-kpt, test-libraries, go-command, controller, kpt-function]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Notify"
         uses: ./.github/actions/notify-failure
