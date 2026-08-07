@@ -5,12 +5,15 @@ on:
     branches: [master, 'feature/**']
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/heads/feature/') }}
+
 permissions:
   contents: read
   packages: write
   id-token: write
   attestations: write
-  artifact-metadata: write
   security-events: write
   issues: write
 
@@ -64,6 +67,7 @@ jobs:
     needs: discover-go
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         command: ${{ fromJson(needs.discover-go.outputs.commands) }}
     steps:
@@ -78,6 +82,7 @@ jobs:
     needs: discover-controllers
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     steps:
@@ -92,6 +97,7 @@ jobs:
     needs: discover-kpt
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     steps:
@@ -106,6 +112,7 @@ jobs:
     needs: discover-libraries
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         library: ${{ fromJson(needs.discover-libraries.outputs.libraries) }}
     steps:
@@ -121,6 +128,7 @@ jobs:
     needs: [lint-go, discover-go]
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         command: ${{ fromJson(needs.discover-go.outputs.commands) }}
     steps:
@@ -135,6 +143,7 @@ jobs:
     needs: [lint-controllers, discover-controllers]
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     steps:
@@ -149,6 +158,7 @@ jobs:
     needs: [lint-kpt, discover-kpt]
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     steps:
@@ -163,6 +173,7 @@ jobs:
     needs: [lint-libraries, discover-libraries]
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         library: ${{ fromJson(needs.discover-libraries.outputs.libraries) }}
     steps:
@@ -173,10 +184,28 @@ jobs:
         with:
           paths: ./internal/${{ matrix.library }}/...
 
+  quality-gate:
+    if: always()
+    needs: [test-go, test-controllers, test-kpt, test-libraries]
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Require all test matrices to pass"
+        if: >-
+          ${{
+            needs.test-go.result != 'success' ||
+            needs.test-controllers.result != 'success' ||
+            needs.test-kpt.result != 'success' ||
+            needs.test-libraries.result != 'success'
+          }}
+        run: |
+          echo "One or more quality matrices did not pass."
+          exit 1
+
   # ─── BUILD ───────────────────────────────────────────────────────────
   build-go:
-    needs: [test-go, discover-go]
+    needs: [quality-gate, discover-go]
     strategy:
+      fail-fast: true
       matrix:
         command: ${{ fromJson(needs.discover-go.outputs.commands) }}
     uses: ./.github/workflows/image-build.yaml
@@ -184,8 +213,9 @@ jobs:
       import-path: ./cmd/${{ matrix.command }}
 
   build-controllers:
-    needs: [test-controllers, discover-controllers]
+    needs: [quality-gate, discover-controllers]
     strategy:
+      fail-fast: true
       matrix:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     uses: ./.github/workflows/image-build.yaml
@@ -193,18 +223,36 @@ jobs:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   build-kpt:
-    needs: [test-kpt, discover-kpt]
+    needs: [quality-gate, discover-kpt]
     strategy:
+      fail-fast: true
       matrix:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     uses: ./.github/workflows/image-build.yaml
     with:
       import-path: ./${{ matrix.function }}
 
+  build-gate:
+    if: always()
+    needs: [build-go, build-controllers, build-kpt]
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Require all build matrices to pass"
+        if: >-
+          ${{
+            needs.build-go.result != 'success' ||
+            needs.build-controllers.result != 'success' ||
+            needs.build-kpt.result != 'success'
+          }}
+        run: |
+          echo "One or more image build matrices did not pass."
+          exit 1
+
   # ─── SCAN ────────────────────────────────────────────────────────────
   scan-go:
-    needs: [build-go, discover-go]
+    needs: [build-gate, discover-go]
     strategy:
+      fail-fast: true
       matrix:
         command: ${{ fromJson(needs.discover-go.outputs.commands) }}
     uses: ./.github/workflows/image-scan.yaml
@@ -212,8 +260,9 @@ jobs:
       import-path: ./cmd/${{ matrix.command }}
 
   scan-controllers:
-    needs: [build-controllers, discover-controllers]
+    needs: [build-gate, discover-controllers]
     strategy:
+      fail-fast: true
       matrix:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     uses: ./.github/workflows/image-scan.yaml
@@ -221,18 +270,37 @@ jobs:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   scan-kpt:
-    needs: [build-kpt, discover-kpt]
+    needs: [build-gate, discover-kpt]
     strategy:
+      fail-fast: true
       matrix:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     uses: ./.github/workflows/image-scan.yaml
     with:
       import-path: ./${{ matrix.function }}
 
+  scan-gate:
+    if: always()
+    needs: [scan-go, scan-controllers, scan-kpt]
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Require all scan matrices to pass"
+        if: >-
+          ${{
+            needs.scan-go.result != 'success' ||
+            needs.scan-controllers.result != 'success' ||
+            needs.scan-kpt.result != 'success'
+          }}
+        run: |
+          echo "One or more image scan matrices did not pass."
+          exit 1
+
   # ─── SIGN ────────────────────────────────────────────────────────────
   sign-go:
-    needs: [scan-go, discover-go]
+    if: github.ref == 'refs/heads/master'
+    needs: [scan-gate, discover-go]
     strategy:
+      fail-fast: true
       matrix:
         command: ${{ fromJson(needs.discover-go.outputs.commands) }}
     uses: ./.github/workflows/image-sign.yaml
@@ -240,8 +308,10 @@ jobs:
       import-path: ./cmd/${{ matrix.command }}
 
   sign-controllers:
-    needs: [scan-controllers, discover-controllers]
+    if: github.ref == 'refs/heads/master'
+    needs: [scan-gate, discover-controllers]
     strategy:
+      fail-fast: true
       matrix:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     uses: ./.github/workflows/image-sign.yaml
@@ -249,18 +319,45 @@ jobs:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   sign-kpt:
-    needs: [scan-kpt, discover-kpt]
+    if: github.ref == 'refs/heads/master'
+    needs: [scan-gate, discover-kpt]
     strategy:
+      fail-fast: true
       matrix:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     uses: ./.github/workflows/image-sign.yaml
     with:
       import-path: ./${{ matrix.function }}
 
+  sign-gate:
+    if: always()
+    needs: [sign-go, sign-controllers, sign-kpt]
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Skip signing gate on feature branches"
+        if: github.ref != 'refs/heads/master'
+        run: echo "Signing and attestation are master-only."
+
+      - name: "Require all signing matrices to pass"
+        if: >-
+          ${{
+            github.ref == 'refs/heads/master' &&
+            (
+              needs.sign-go.result != 'success' ||
+              needs.sign-controllers.result != 'success' ||
+              needs.sign-kpt.result != 'success'
+            )
+          }}
+        run: |
+          echo "One or more image signing matrices did not pass."
+          exit 1
+
   # ─── ATTEST ──────────────────────────────────────────────────────────
   attest-go:
-    needs: [sign-go, discover-go]
+    if: github.ref == 'refs/heads/master'
+    needs: [sign-gate, discover-go]
     strategy:
+      fail-fast: true
       matrix:
         command: ${{ fromJson(needs.discover-go.outputs.commands) }}
     uses: ./.github/workflows/image-attest.yaml
@@ -268,8 +365,10 @@ jobs:
       import-path: ./cmd/${{ matrix.command }}
 
   attest-controllers:
-    needs: [sign-controllers, discover-controllers]
+    if: github.ref == 'refs/heads/master'
+    needs: [sign-gate, discover-controllers]
     strategy:
+      fail-fast: true
       matrix:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     uses: ./.github/workflows/image-attest.yaml
@@ -277,8 +376,10 @@ jobs:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   attest-kpt:
-    needs: [sign-kpt, discover-kpt]
+    if: github.ref == 'refs/heads/master'
+    needs: [sign-gate, discover-kpt]
     strategy:
+      fail-fast: true
       matrix:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     uses: ./.github/workflows/image-attest.yaml
@@ -287,7 +388,6 @@ jobs:
 
   # ─── KPT FUNCTIONS ───────────────────────────────────────────────────
   kpt-render:
-    needs: [attest-go, attest-controllers, attest-kpt]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -300,6 +400,13 @@ jobs:
         with:
           package_path: kubernetes/sovereignite.net/adk/shipcrew
 
+      - name: "Upload rendered package"
+        uses: actions/upload-artifact@v7
+        with:
+          name: rendered-kpt-package
+          path: kubernetes/sovereignite.net/adk/shipcrew
+          retention-days: 1
+
   kpt-validate:
     needs: kpt-render
     runs-on: ubuntu-latest
@@ -308,6 +415,12 @@ jobs:
 
       - name: "Setup kpt"
         uses: ./.github/actions/kpt-setup
+
+      - name: "Download rendered package"
+        uses: actions/download-artifact@v7
+        with:
+          name: rendered-kpt-package
+          path: kubernetes/sovereignite.net/adk/shipcrew
 
       - name: "Validate kubeconform"
         uses: ./.github/actions/kpt-kubeconform
@@ -320,13 +433,25 @@ jobs:
           package_path: kubernetes/sovereignite.net/adk/shipcrew
 
   kpt-provenance:
-    needs: kpt-validate
+    if: >-
+      ${{
+        github.ref == 'refs/heads/master' &&
+        needs.kpt-validate.result == 'success' &&
+        needs.attest-kpt.result == 'success'
+      }}
+    needs: [kpt-validate, attest-kpt]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
       - name: "Setup kpt"
         uses: ./.github/actions/kpt-setup
+
+      - name: "Download rendered package"
+        uses: actions/download-artifact@v7
+        with:
+          name: rendered-kpt-package
+          path: kubernetes/sovereignite.net/adk/shipcrew
 
       - name: "Compute artifact name"
         id: artifact
@@ -353,8 +478,13 @@ jobs:
           image: ${{ steps.ref.outputs.image }}@${{ steps.ref.outputs.digest }}
 
   notify-failure:
-    if: failure()
-    needs: [discover-go, discover-controllers, discover-kpt, discover-libraries, lint-go, lint-controllers, lint-kpt, lint-libraries, test-go, test-controllers, test-kpt, test-libraries, build-go, build-controllers, build-kpt, scan-go, scan-controllers, scan-kpt, sign-go, sign-controllers, sign-kpt, attest-go, attest-controllers, attest-kpt, kpt-render, kpt-validate, kpt-provenance]
+    if: >-
+      ${{
+        github.ref == 'refs/heads/master' &&
+        always() &&
+        contains(needs.*.result, 'failure')
+      }}
+    needs: [discover-go, discover-controllers, discover-kpt, discover-libraries, lint-go, lint-controllers, lint-kpt, lint-libraries, test-go, test-controllers, test-kpt, test-libraries, quality-gate, build-go, build-controllers, build-kpt, build-gate, scan-go, scan-controllers, scan-kpt, scan-gate, sign-go, sign-controllers, sign-kpt, sign-gate, attest-go, attest-controllers, attest-kpt, kpt-render, kpt-validate, kpt-provenance]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
