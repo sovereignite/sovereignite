@@ -1,0 +1,15 @@
+name: 'Discover Go Commands'
+description: 'Find all Go commands in cmd/*'
+outputs:
+  commands:
+    description: 'List of Go command names'
+    value: ${{ steps.discover.outputs.commands }}
+runs:
+  using: "composite"
+  steps:
+    - name: "Discover"
+      id: discover
+      run: |
+        COMMANDS=$(find cmd -maxdepth 1 -type d -not -name cmd -not -name client -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
+        echo "commands=$COMMANDS" >> $GITHUB_OUTPUT
+      shell: bash

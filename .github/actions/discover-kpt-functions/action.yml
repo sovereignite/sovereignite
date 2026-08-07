@@ -1,0 +1,15 @@
+name: 'Discover kpt Functions'
+description: 'Find all kpt functions in kubernetes/*/kpt-functions/*'
+outputs:
+  functions:
+    description: 'List of kpt function names'
+    value: ${{ steps.discover.outputs.functions }}
+runs:
+  using: "composite"
+  steps:
+    - name: "Discover"
+      id: discover
+      run: |
+        FUNCTIONS=$(find kubernetes/*/kpt-functions -maxdepth 1 -type d -not -name kpt-functions -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
+        echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
+      shell: bash

@@ -17,15 +17,56 @@ permissions:
   issues: write
 
 jobs:
-  discover:
-    uses: ./.github/workflows/discover-components.yaml
+  discover-go:
+    runs-on: ubuntu-latest
+    outputs:
+      commands: ${{ steps.discover.outputs.commands }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Discover"
+        id: discover
+        uses: ./.github/actions/discover-go-commands
+
+  discover-controllers:
+    runs-on: ubuntu-latest
+    outputs:
+      controllers: ${{ steps.discover.outputs.controllers }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Discover"
+        id: discover
+        uses: ./.github/actions/discover-controllers
+
+  discover-kpt:
+    runs-on: ubuntu-latest
+    outputs:
+      functions: ${{ steps.discover.outputs.functions }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Discover"
+        id: discover
+        uses: ./.github/actions/discover-kpt-functions
+
+  discover-libraries:
+    runs-on: ubuntu-latest
+    outputs:
+      libraries: ${{ steps.discover.outputs.libraries }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Discover"
+        id: discover
+        uses: ./.github/actions/discover-libraries
 
   lint-go:
-    needs: discover
+    needs: discover-go
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        command: ${{ fromJson(needs.discover.outputs.go-commands) }}
+        command: ${{ fromJson(needs.discover-go.outputs.commands) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -35,11 +76,11 @@ jobs:
           paths: ./cmd/${{ matrix.command }}/...
 
   lint-controllers:
-    needs: discover
+    needs: discover-controllers
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        controller: ${{ fromJson(needs.discover.outputs.controllers) }}
+        controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -49,11 +90,11 @@ jobs:
           paths: ./controllers/${{ matrix.controller }}/...
 
   lint-libraries:
-    needs: discover
+    needs: discover-libraries
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        library: ${{ fromJson(needs.discover.outputs.libraries) }}
+        library: ${{ fromJson(needs.discover-libraries.outputs.libraries) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -63,11 +104,11 @@ jobs:
           paths: ./internal/${{ matrix.library }}/...
 
   test-go:
-    needs: lint-go
+    needs: [lint-go, discover-go]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        command: ${{ fromJson(needs.discover.outputs.go-commands) }}
+        command: ${{ fromJson(needs.discover-go.outputs.commands) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -77,11 +118,11 @@ jobs:
           paths: ./cmd/${{ matrix.command }}/...
 
   test-controllers:
-    needs: lint-controllers
+    needs: [lint-controllers, discover-controllers]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        controller: ${{ fromJson(needs.discover.outputs.controllers) }}
+        controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -91,11 +132,11 @@ jobs:
           paths: ./controllers/${{ matrix.controller }}/...
 
   test-libraries:
-    needs: lint-libraries
+    needs: [lint-libraries, discover-libraries]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        library: ${{ fromJson(needs.discover.outputs.libraries) }}
+        library: ${{ fromJson(needs.discover-libraries.outputs.libraries) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -105,35 +146,35 @@ jobs:
           paths: ./internal/${{ matrix.library }}/...
 
   go-command:
-    needs: [test-go, discover]
+    needs: [test-go, discover-go]
     strategy:
       matrix:
-        command: ${{ fromJson(needs.discover.outputs.go-commands) }}
+        command: ${{ fromJson(needs.discover-go.outputs.commands) }}
     uses: ./.github/workflows/image-pipeline.yaml
     with:
       import-path: ./cmd/${{ matrix.command }}
 
   controller:
-    needs: [test-controllers, discover]
+    needs: [test-controllers, discover-controllers]
     strategy:
       matrix:
-        controller: ${{ fromJson(needs.discover.outputs.controllers) }}
+        controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     uses: ./.github/workflows/image-pipeline.yaml
     with:
       import-path: ./controllers/${{ matrix.controller }}/cmd
 
   kpt-function:
-    needs: discover
+    needs: discover-kpt
     strategy:
       matrix:
-        function: ${{ fromJson(needs.discover.outputs.kpt-functions) }}
+        function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     uses: ./.github/workflows/image-pipeline.yaml
     with:
       import-path: ./kubernetes/sovereignite.net/kpt-functions/${{ matrix.function }}
 
   notify-failure:
     if: failure() && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
-    needs: [discover, lint-go, lint-controllers, lint-libraries, test-go, test-controllers, test-libraries, go-command, controller, kpt-function]
+    needs: [discover-go, discover-controllers, discover-kpt, discover-libraries, lint-go, lint-controllers, lint-libraries, test-go, test-controllers, test-libraries, go-command, controller, kpt-function]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

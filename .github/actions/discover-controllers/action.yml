@@ -1,0 +1,15 @@
+name: 'Discover Controllers'
+description: 'Find all controllers in controllers/*'
+outputs:
+  controllers:
+    description: 'List of controller names'
+    value: ${{ steps.discover.outputs.controllers }}
+runs:
+  using: "composite"
+  steps:
+    - name: "Discover"
+      id: discover
+      run: |
+        CONTROLLERS=$(find controllers -maxdepth 1 -type d -not -name controllers -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
+        echo "controllers=$CONTROLLERS" >> $GITHUB_OUTPUT
+      shell: bash
