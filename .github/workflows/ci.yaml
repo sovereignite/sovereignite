@@ -14,6 +14,7 @@ permissions:
   packages: write
   id-token: write
   attestations: write
+  artifact-metadata: write
   security-events: write
   issues: write
 
@@ -533,7 +534,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: kpt-package-${{ matrix.package.id }}
-          path: ${{ matrix.package.path }}
+          path: ${{ matrix.package.path }}/**
           retention-days: 1
 
   kpt-validate:
