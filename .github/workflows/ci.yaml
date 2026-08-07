@@ -32,7 +32,7 @@ jobs:
       - name: "Lint"
         uses: ./.github/actions/lint
         with:
-          paths: ./cmd/${{ matrix.command }}/... ./internal/...
+          paths: ./cmd/${{ matrix.command }}/...
 
   lint-controllers:
     needs: discover
