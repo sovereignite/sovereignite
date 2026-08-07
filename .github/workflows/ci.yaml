@@ -459,6 +459,24 @@ jobs:
 
   # ─── KPT FUNCTIONS ───────────────────────────────────────────────────
   kpt-render:
+    if: >-
+      ${{
+        always() &&
+        github.ref == 'refs/heads/master' &&
+        needs.discover-go.result == 'success' &&
+        needs.discover-controllers.result == 'success' &&
+        needs.discover-kpt.result == 'success' &&
+        (
+          needs.discover-go.outputs.has-targets != 'true' || needs.attest-go.result == 'success'
+        ) &&
+        (
+          needs.discover-controllers.outputs.has-targets != 'true' || needs.attest-controllers.result == 'success'
+        ) &&
+        (
+          needs.discover-kpt.outputs.has-targets != 'true' || needs.attest-kpt.result == 'success'
+        )
+      }}
+    needs: [discover-go, discover-controllers, discover-kpt, attest-go, attest-controllers, attest-kpt]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
