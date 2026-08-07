@@ -3,8 +3,6 @@ name: CI
 on:
   push:
     branches: [master, 'feature/**']
-  pull_request:
-    branches: [master, 'feature/**']
   workflow_dispatch:
 
 permissions:
@@ -170,7 +168,7 @@ jobs:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     uses: ./.github/workflows/image-pipeline.yaml
     with:
-      import-path: ./kubernetes/sovereignite.net/kpt-functions/${{ matrix.function }}
+      import-path: ./${{ matrix.function }}
 
   notify-failure:
     if: failure() && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
