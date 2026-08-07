@@ -158,7 +158,10 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error marshaling report: %v\n", err)
 		os.Exit(1)
 	}
-	enc.Close()
+	if err := enc.Close(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error closing encoder: %v\n", err)
+		os.Exit(1)
+	}
 
 	fmt.Print(buf.String())
 }
