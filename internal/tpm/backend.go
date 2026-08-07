@@ -188,8 +188,7 @@ func ValidatePublicKey(template Template, key crypto.PublicKey) error {
 		if !ok || publicKey == nil {
 			return errors.New("TPM public key is not ECDSA")
 		}
-		if publicKey.Curve != elliptic.P256() || publicKey.X == nil || publicKey.Y == nil ||
-			!publicKey.Curve.IsOnCurve(publicKey.X, publicKey.Y) {
+		if _, err := publicKey.ECDH(); publicKey.Curve != elliptic.P256() || err != nil {
 			return errors.New("TPM ECDSA public key is not a valid P-256 point")
 		}
 	case AlgorithmEd25519:

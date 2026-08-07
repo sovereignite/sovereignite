@@ -1,0 +1,12 @@
+name: 'kpt Gatekeeper'
+description: 'Validate kpt package with gatekeeper'
+inputs:
+  package_path:
+    description: 'Path to kpt package directory'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Validate with gatekeeper
+      run: kpt fn eval "${{ inputs.package_path }}" -i ghcr.io/kptdev/krm-functions-catalog/gatekeeper:v0.2.5
+      shell: bash

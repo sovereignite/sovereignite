@@ -1,0 +1,128 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: Crew
+metadata:
+  name: blue-team
+  namespace: blue-crew
+spec:
+  appName: blue-team-ops
+  members:
+  - description: |
+      Blue team lead. Coordinates defensive operations, triages incidents, and delegates to specialists.
+    disallowTransferToParent: true
+    disallowTransferToPeers: false
+    generateContentConfig:
+      maxOutputTokens: 4096
+      temperature: 0.1
+    includeContents: default
+    instruction: |
+      You are the blue team lead. Given an incident or threat scenario, assess severity, coordinate response across your team, and ensure proper containment and remediation. Use {incident_context} from session state for situational awareness.
+    mode: task
+    modelRef: gemini-flash
+    name: blue-lead
+    outputKey: incident_summary
+    subAgents:
+    - threat-hunter
+    - incident-responder
+    - hardener
+    tools:
+    - query_logs
+    - list_alerts
+  - description: |
+      Proactive threat hunting. Searches for indicators of compromise, lateral movement, and anomalous behavior.
+    disallowTransferToParent: false
+    disallowTransferToPeers: true
+    includeContents: none
+    inputSchema:
+      properties:
+        hypothesis:
+          type: string
+        time_range:
+          type: string
+      required:
+      - hypothesis
+      type: object
+    instruction: |
+      You are a threat hunter. Given a hypothesis or IOC, search logs and telemetry for evidence of compromise. Look for lateral movement, persistence mechanisms, and data exfiltration. Document findings with timestamps and evidence.
+    mode: single_turn
+    modelRef: gemini-flash
+    name: threat-hunter
+    outputSchema:
+      properties:
+        confidence:
+          type: number
+        findings:
+          items:
+            properties:
+              evidence:
+                type: string
+              indicator:
+                type: string
+              severity:
+                type: string
+              timestamp:
+                type: string
+            type: object
+          type: array
+      required:
+      - findings
+      - confidence
+      type: object
+    toolsets:
+    - siem-tools
+  - description: |
+      Triage and containment. Assesses alert severity, contains threats, and coordinates remediation actions.
+    disallowTransferToParent: false
+    disallowTransferToPeers: true
+    includeContents: none
+    inputSchema:
+      properties:
+        alert_details:
+          type: object
+        alert_id:
+          type: string
+      required:
+      - alert_id
+      type: object
+    instruction: |
+      You are an incident responder. Given alert details, assess severity, determine containment actions, and coordinate remediation. Prioritize based on blast radius and business impact. Document all actions taken.
+    mode: single_turn
+    modelRef: gemini-flash
+    name: incident-responder
+    outputSchema:
+      properties:
+        containment_actions:
+          items:
+            type: string
+          type: array
+        remediation:
+          type: string
+        severity:
+          enum:
+          - critical
+          - high
+          - medium
+          - low
+          - informational
+          type: string
+      required:
+      - severity
+      - containment_actions
+      type: object
+    toolsets:
+    - siem-tools
+  - description: |
+      Defensive hardening. Recommends security controls, generates policies, and validates compliance.
+    disallowTransferToParent: true
+    disallowTransferToPeers: true
+    generateContentConfig:
+      temperature: 0.3
+    includeContents: default
+    instruction: |
+      You are a security hardener. Given findings from the threat hunter and incident responder, recommend defensive controls, generate policies, and validate compliance. Focus on preventing recurrence with {hunter_findings} context.
+    mode: chat
+    modelRef: gemini-flash
+    name: hardener
+    outputKey: hardening_report
+    toolsets:
+    - hardening-tools
+  modelRef: gemini-flash

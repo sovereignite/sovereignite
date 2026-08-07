@@ -209,7 +209,7 @@ func (s *FileJournalStore) Save(expectedRevision uint64, next Journal) error {
 		return fmt.Errorf("create bootstrap journal temporary file: %w", err)
 	}
 	temporaryPath := temporary.Name()
-	defer os.Remove(temporaryPath)
+	defer func() { _ = os.Remove(temporaryPath) }()
 
 	if err := temporary.Chmod(0o600); err != nil {
 		_ = temporary.Close()

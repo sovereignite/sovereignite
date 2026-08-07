@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- adk.sovereignite.net_v1alpha1_crew_marketing-team.yaml
+- adk.sovereignite.net_v1alpha1_crewrun_marketing-q3-launch.yaml
+- adk.sovereignite.net_v1alpha1_mcpserver_analytics-tools.yaml
+- adk.sovereignite.net_v1alpha1_mcpserver_content-tools.yaml
+- adk.sovereignite.net_v1alpha1_mcpserver_seo-tools.yaml
+- adk.sovereignite.net_v1alpha1_mcpserver_social-tools.yaml
+- adk.sovereignite.net_v1alpha1_modelbackend_gemini-flash.yaml
+- v1_namespace_marketing-crew.yaml

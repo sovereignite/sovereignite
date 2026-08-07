@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - adk.sovereignite.net_crews.yaml
+  - adk.sovereignite.net_crewruns.yaml
+  - adk.sovereignite.net_mcpservers.yaml
+  - adk.sovereignite.net_modelbackends.yaml
+  - adk.sovereignite.net_workflows.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/component: crds
+    includeSelectors: false

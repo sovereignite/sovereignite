@@ -1,0 +1,43 @@
+name: Image Sign
+
+on:
+  workflow_call:
+    inputs:
+      import-path:
+        description: 'Go import path (for artifact lookup)'
+        required: true
+        type: string
+      target-id:
+        description: 'Stable logical target id used in artifact names'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Download image ref"
+        uses: actions/download-artifact@v7
+        with:
+          name: image-ref-${{ inputs.target-id }}
+          path: /tmp/image-ref/
+
+      - name: "Read image ref"
+        id: ref
+        run: |
+          echo "image=$(cat /tmp/image-ref/image)" >> "$GITHUB_OUTPUT"
+          echo "digest=$(cat /tmp/image-ref/digest)" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: "Sign"
+        uses: ./.github/actions/image-sign
+        with:
+          image: ${{ steps.ref.outputs.image }}
+          digest: ${{ steps.ref.outputs.digest }}
+          token: ${{ secrets.GITHUB_TOKEN }}

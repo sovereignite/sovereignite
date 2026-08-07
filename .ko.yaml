@@ -54,3 +54,59 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
+
+  - id: tpm-devid-provisioner
+    dir: .
+    main: ./cmd/tpm-devid-provisioner
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+
+  - id: shipcrew
+    dir: .
+    main: ./cmd/shipcrew
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+
+  - id: spire-tpm-keymanager-controller
+    dir: .
+    main: ./controllers/spire-tpm-keymanager-controller/cmd/spire-tpm-keymanager-controller
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+
+  - id: spire-tpm-keymanager
+    dir: .
+    main: ./controllers/spire-tpm-keymanager/cmd/spire-tpm-keymanager
+    env:
+      # PKCS#11 is exposed through cgo; keep the resulting binary static for
+      # the distroless runtime image.
+      - CGO_ENABLED=1
+    ldflags:
+      - -s -w
+      - -linkmode external
+      - -extldflags "-static"
+
+  - id: k8s-tpm-csr-signer
+    dir: .
+    main: ./controllers/k8s-tpm-csr-signer/cmd/k8s-tpm-csr-signer
+    env:
+      - CGO_ENABLED=1
+    ldflags:
+      - -s -w
+      - -linkmode external
+      - -extldflags "-static"
+
+  - id: tpm-cluster-issuer
+    dir: .
+    main: ./controllers/tpm-cluster-issuer/cmd/tpm-cluster-issuer
+    env:
+      - CGO_ENABLED=1
+    ldflags:
+      - -s -w
+      - -linkmode external
+      - -extldflags "-static"

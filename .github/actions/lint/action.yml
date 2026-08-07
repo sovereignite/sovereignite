@@ -1,0 +1,23 @@
+name: 'Lint'
+description: 'Run golangci-lint'
+inputs:
+  paths:
+    description: 'Paths to lint'
+    required: true
+  go-version-file:
+    description: 'Path to go.mod for Go version detection'
+    required: false
+    default: 'go.mod'
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: ${{ inputs.go-version-file }}
+
+    - name: "Lint"
+      uses: golangci/golangci-lint-action@v9
+      with:
+        version: latest
+        args: ${{ inputs.paths }}

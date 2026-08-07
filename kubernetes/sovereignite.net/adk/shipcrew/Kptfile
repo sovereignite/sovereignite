@@ -1,0 +1,47 @@
+apiVersion: kpt.dev/v1
+kind: Kptfile
+metadata:
+  name: shipcrew
+  annotations:
+    config.kubernetes.io/local-config: "true"
+info:
+  description: |
+    Shipcrew controller for ADK (Agent Development Kit).
+    
+    Source provenance is maintained through kpt's package management.
+    Use `kpt fn render` to regenerate localized files from source.
+    
+    Pipeline:
+    1. kubeconform: Validates against Kubernetes schema
+    2. gatekeeper: Validates against OPA policies
+  keywords:
+    - adk
+    - shipcrew
+    - controller
+    - kubernetes
+  site: https://github.com/sovereignite/sovereignite
+  emails:
+    - foundation@sovereignite.net
+  license: GPL-2.0-only
+upstream:
+  type: git
+  git:
+    repo: https://github.com/sovereignite/sovereignite
+    directory: kubernetes/sovereignite.net/adk/shipcrew
+    ref: master
+upstreamLock:
+  type: git
+  git:
+    repo: https://github.com/sovereignite/sovereignite
+    directory: kubernetes/sovereignite.net/adk/shipcrew
+    ref: master
+    commit: ""
+pipeline:
+  validators:
+    - image: ghcr.io/kptdev/krm-functions-catalog/kubeconform:v0.1.4
+      name: kubeconform
+      configMap:
+        strict: "true"
+        kubernetes-version: "1.36"
+    - image: ghcr.io/kptdev/krm-functions-catalog/gatekeeper:v0.2.5
+      name: gatekeeper

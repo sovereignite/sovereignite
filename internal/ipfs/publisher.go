@@ -21,12 +21,12 @@ var (
 	// ErrTrustRevisionRollback means a publication predates Trust state that
 	// has already been durably reserved or completed.
 	ErrTrustRevisionRollback = errors.New(
-		"Trust publication state revision would roll back public state",
+		"trust publication state revision would roll back public state",
 	)
 	// ErrTrustRevisionConflict means different content claims the same
 	// authoritative Trust state revision.
 	ErrTrustRevisionConflict = errors.New(
-		"Trust publication state revision conflicts with durable public state",
+		"trust publication state revision conflicts with durable public state",
 	)
 )
 
@@ -62,7 +62,7 @@ func NewPublisher(
 	clock Clock,
 ) (*Publisher, error) {
 	if isNil(node) {
-		return nil, errors.New("full Kubo node is required")
+		return nil, errors.New("full kubo node is required")
 	}
 	if signer == nil {
 		return nil, errors.New("TPM IPNS signer is required")
@@ -216,7 +216,7 @@ func (p *Publisher) inspectAndPin(
 	root cid.Cid,
 ) error {
 	if !root.Defined() || root.Version() != 1 {
-		return errors.New("Kubo import returned an invalid root CID")
+		return errors.New("kubo import returned an invalid root CID")
 	}
 	inspection, err := p.node.InspectPublicSnapshot(ctx, root)
 	if err != nil {
@@ -237,7 +237,7 @@ func (p *Publisher) inspectAndPin(
 		return fmt.Errorf("verify public snapshot pin: %w", err)
 	}
 	if !pinned {
-		return errors.New("Kubo did not retain the complete snapshot pin")
+		return errors.New("kubo did not retain the complete snapshot pin")
 	}
 	return nil
 }

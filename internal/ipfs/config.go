@@ -104,7 +104,7 @@ func (c Config) Validate() error {
 	if repositoryErr != nil {
 		errs = append(
 			errs,
-			fmt.Errorf("Kubo repository path: %w", repositoryErr),
+			fmt.Errorf("kubo repository path: %w", repositoryErr),
 		)
 	}
 	runtimeErr := validateServiceRoot(c.RuntimePath)
@@ -115,7 +115,7 @@ func (c Config) Validate() error {
 		rootsOverlap(c.RepositoryPath, c.RuntimePath) {
 		errs = append(
 			errs,
-			errors.New("Kubo repository and runtime paths must not overlap"),
+			errors.New("kubo repository and runtime paths must not overlap"),
 		)
 	}
 	if err := c.RecordPolicy.Validate(); err != nil {

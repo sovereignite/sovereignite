@@ -72,7 +72,7 @@ func SignCSR(csrBytes []byte, caPEM string, ref PKCS11Ref, opts Options) (*Issue
 	if err != nil {
 		return nil, err
 	}
-	defer ctx.Close()
+	defer func() { _ = ctx.Close() }()
 
 	now := time.Now().UTC()
 	duration := opts.RequestedDuration
@@ -165,11 +165,11 @@ func LoadPKCS11Signer(ref PKCS11Ref) (*crypto11.Context, crypto.Signer, error) {
 	}
 	signer, err := ctx.FindKeyPair(nil, []byte(ref.KeyLabel))
 	if err != nil {
-		ctx.Close()
+		_ = ctx.Close()
 		return nil, nil, fmt.Errorf("find PKCS#11 key %q: %w", ref.KeyLabel, err)
 	}
 	if signer == nil {
-		ctx.Close()
+		_ = ctx.Close()
 		return nil, nil, fmt.Errorf("PKCS#11 key %q not found", ref.KeyLabel)
 	}
 	return ctx, signer, nil
@@ -204,7 +204,7 @@ func GeneratePKCS11Signer(ref PKCS11Ref, keyID, keyType string) (*crypto11.Conte
 		err = fmt.Errorf("unsupported key type %q", keyType)
 	}
 	if err != nil {
-		ctx.Close()
+		_ = ctx.Close()
 		return nil, nil, err
 	}
 	return ctx, signer, nil

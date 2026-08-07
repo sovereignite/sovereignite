@@ -1,0 +1,142 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: Crew
+metadata:
+  name: blue-team
+  namespace: blue-crew
+spec:
+  appName: blue-team-ops
+  modelRef: gemini-flash
+  members:
+    - name: blue-lead
+      mode: task
+      description: >
+        Blue team lead. Coordinates defensive operations, triages
+        incidents, and delegates to specialists.
+      instruction: >
+        You are the blue team lead. Given an incident or threat
+        scenario, assess severity, coordinate response across your
+        team, and ensure proper containment and remediation.
+        Use {incident_context} from session state for situational awareness.
+      modelRef: gemini-flash
+      subAgents:
+        - threat-hunter
+        - incident-responder
+        - hardener
+      tools:
+        - query_logs
+        - list_alerts
+      generateContentConfig:
+        temperature: 0.1
+        maxOutputTokens: 4096
+      includeContents: default
+      disallowTransferToParent: true
+      disallowTransferToPeers: false
+      outputKey: incident_summary
+
+    - name: threat-hunter
+      mode: single_turn
+      description: >
+        Proactive threat hunting. Searches for indicators of
+        compromise, lateral movement, and anomalous behavior.
+      instruction: >
+        You are a threat hunter. Given a hypothesis or IOC, search
+        logs and telemetry for evidence of compromise. Look for
+        lateral movement, persistence mechanisms, and data exfiltration.
+        Document findings with timestamps and evidence.
+      modelRef: gemini-flash
+      toolsets:
+        - siem-tools
+      includeContents: none
+      disallowTransferToParent: false
+      disallowTransferToPeers: true
+      inputSchema:
+        type: object
+        properties:
+          hypothesis:
+            type: string
+          time_range:
+            type: string
+        required:
+          - hypothesis
+      outputSchema:
+        type: object
+        properties:
+          findings:
+            type: array
+            items:
+              type: object
+              properties:
+                timestamp:
+                  type: string
+                indicator:
+                  type: string
+                severity:
+                  type: string
+                evidence:
+                  type: string
+          confidence:
+            type: number
+        required:
+          - findings
+          - confidence
+
+    - name: incident-responder
+      mode: single_turn
+      description: >
+        Triage and containment. Assesses alert severity, contains
+        threats, and coordinates remediation actions.
+      instruction: >
+        You are an incident responder. Given alert details, assess
+        severity, determine containment actions, and coordinate
+        remediation. Prioritize based on blast radius and business
+        impact. Document all actions taken.
+      modelRef: gemini-flash
+      toolsets:
+        - siem-tools
+      includeContents: none
+      disallowTransferToParent: false
+      disallowTransferToPeers: true
+      inputSchema:
+        type: object
+        properties:
+          alert_id:
+            type: string
+          alert_details:
+            type: object
+        required:
+          - alert_id
+      outputSchema:
+        type: object
+        properties:
+          severity:
+            type: string
+            enum: [critical, high, medium, low, informational]
+          containment_actions:
+            type: array
+            items:
+              type: string
+          remediation:
+            type: string
+        required:
+          - severity
+          - containment_actions
+
+    - name: hardener
+      mode: chat
+      description: >
+        Defensive hardening. Recommends security controls, generates
+        policies, and validates compliance.
+      instruction: >
+        You are a security hardener. Given findings from the threat
+        hunter and incident responder, recommend defensive controls,
+        generate policies, and validate compliance. Focus on
+        preventing recurrence with {hunter_findings} context.
+      modelRef: gemini-flash
+      toolsets:
+        - hardening-tools
+      generateContentConfig:
+        temperature: 0.3
+      includeContents: default
+      disallowTransferToParent: true
+      disallowTransferToPeers: true
+      outputKey: hardening_report

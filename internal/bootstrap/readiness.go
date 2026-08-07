@@ -82,7 +82,7 @@ func (p *FilePreparedPublisher) Publish(ctx context.Context) error {
 		return fmt.Errorf("create prepared readiness temporary file: %w", err)
 	}
 	temporaryPath := temporary.Name()
-	defer os.Remove(temporaryPath)
+	defer func() { _ = os.Remove(temporaryPath) }()
 	if err := temporary.Chmod(0o600); err != nil {
 		_ = temporary.Close()
 		return fmt.Errorf("set prepared readiness permissions: %w", err)
@@ -175,8 +175,8 @@ func validBootID(value string) bool {
 				return false
 			}
 		default:
-			if !((character >= '0' && character <= '9') ||
-				(character >= 'a' && character <= 'f')) {
+			if (character < '0' || character > '9') &&
+				(character < 'a' || character > 'f') {
 				return false
 			}
 		}

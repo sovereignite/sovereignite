@@ -1,0 +1,6 @@
+go 1.26.5
+
+use (
+	.
+	./kubernetes/sovereignite.net/kpt-functions/provenance
+)

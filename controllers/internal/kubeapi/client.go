@@ -145,7 +145,7 @@ func (c *Client) do(method, path string, body []byte, contentType string) ([]byt
 	if err != nil {
 		return nil, 0, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

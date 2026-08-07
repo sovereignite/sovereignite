@@ -1,0 +1,67 @@
+name: 'Discover kpt Functions'
+description: 'Find all kpt functions in kubernetes/*/kpt-functions/*'
+inputs:
+  changed-files:
+    description: 'Newline-delimited changed file paths'
+    required: false
+  full-build:
+    description: 'Whether all targets are required'
+    required: false
+    default: 'false'
+outputs:
+  functions:
+    description: 'List of kpt function descriptors with path and stable id'
+    value: ${{ steps.discover.outputs.functions }}
+  has-targets:
+    description: 'Whether any kpt functions are affected'
+    value: ${{ steps.discover.outputs.has-targets }}
+runs:
+  using: "composite"
+  steps:
+    - name: "Discover"
+      id: discover
+      env:
+        CHANGED_FILES: ${{ inputs.changed-files }}
+        FULL_BUILD: ${{ inputs.full-build }}
+      run: |
+        mapfile -t candidates < <(find kubernetes/*/kpt-functions -maxdepth 1 -type d -not -name kpt-functions | sort)
+        changed="$CHANGED_FILES"
+        full_build="$FULL_BUILD"
+        if printf '%s\n' "$changed" | awk '/^\.github\// || /^(go\.mod|go\.sum|go\.work|go\.work\.sum|\.ko\.yaml)$/ { found=1 } END { exit !found }'; then
+          full_build=true
+        fi
+
+        function_id() {
+          local id="${1#kubernetes/}"
+          id="${id//\//-}"
+          id="${id//./-}"
+          id="${id//_/-}"
+          id="${id//-kpt-functions/}"
+          while [[ "$id" == *--* ]]; do
+            id="${id//--/-}"
+          done
+          id="${id#-}"
+          id="${id%-}"
+          printf '%s' "$id"
+        }
+
+        selected=()
+        for function in "${candidates[@]}"; do
+          if [ "$full_build" = true ] || printf '%s\n' "$changed" | awk -v prefix="$function/" '$0 ~ "^" prefix { found=1 } END { exit !found }'; then
+            selected+=("$function")
+          fi
+        done
+
+        if [ "${#selected[@]}" -eq 0 ]; then
+          echo 'functions=[{"path":"__skip__","id":"__skip__"}]' >> "$GITHUB_OUTPUT"
+          echo 'has-targets=false' >> "$GITHUB_OUTPUT"
+        else
+          functions=$(
+            for function in "${selected[@]}"; do
+              jq -cn --arg path "$function" --arg id "$(function_id "$function")" '{path: $path, id: $id}'
+            done | jq -s -c .
+          )
+          echo "functions=$functions" >> "$GITHUB_OUTPUT"
+          echo 'has-targets=true' >> "$GITHUB_OUTPUT"
+        fi
+      shell: bash

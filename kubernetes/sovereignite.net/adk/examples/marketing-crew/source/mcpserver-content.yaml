@@ -1,0 +1,16 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: MCPServer
+metadata:
+  name: content-tools
+  namespace: marketing-crew
+spec:
+  transport: streamable-http
+  endpoint: https://mcp.example.com/content
+  requireConfirmation: false
+  toolFilter:
+    allow:
+      - generate_copy
+      - rewrite_tone
+      - summarize
+      - translate
+      - check_grammar

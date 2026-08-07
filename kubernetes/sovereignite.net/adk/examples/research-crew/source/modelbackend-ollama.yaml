@@ -1,0 +1,9 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: ModelBackend
+metadata:
+  name: local-llama
+  namespace: research-crew
+spec:
+  provider: ollama
+  model: llama3.1
+  baseURL: http://ollama.ollama.svc:11434

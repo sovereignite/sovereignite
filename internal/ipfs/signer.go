@@ -35,7 +35,7 @@ var (
 	// ErrKeyManagerSignerUnavailable is the production fail-closed state until
 	// D-012 authorizes and supplies the Key Manager signing contract.
 	ErrKeyManagerSignerUnavailable = errors.New(
-		"Key Manager IPNS signer integration is unavailable",
+		"key manager IPNS signer integration is unavailable",
 	)
 )
 

@@ -1,0 +1,58 @@
+name: Image Build
+
+on:
+  workflow_call:
+    inputs:
+      import-path:
+        description: 'Go import path to build'
+        required: true
+        type: string
+      target-id:
+        description: 'Stable logical target id used in artifact names'
+        required: true
+        type: string
+      tag:
+        description: 'Image tag (defaults to branch name)'
+        required: false
+        type: string
+        default: ''
+      go-version-file:
+        description: 'Path to go.mod for Go version detection'
+        required: false
+        type: string
+        default: 'go.mod'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+      artifact-name: image-ref-${{ inputs.target-id }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Build"
+        id: build
+        uses: ./.github/actions/ko-build
+        with:
+          import-path: ${{ inputs.import-path }}
+          tag: ${{ inputs.tag }}
+          go-version-file: ${{ inputs.go-version-file }}
+
+      - run: |
+          mkdir -p /tmp/image-ref
+          echo "${{ steps.build.outputs.image }}" > /tmp/image-ref/image
+          echo "${{ steps.build.outputs.digest }}" > /tmp/image-ref/digest
+        shell: bash
+
+      - name: "Upload image ref"
+        uses: actions/upload-artifact@v7
+        with:
+          name: image-ref-${{ inputs.target-id }}
+          path: /tmp/image-ref/
+          retention-days: 1

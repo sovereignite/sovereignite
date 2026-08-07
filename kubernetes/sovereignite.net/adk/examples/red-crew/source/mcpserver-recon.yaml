@@ -1,0 +1,17 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: MCPServer
+metadata:
+  name: recon-tools
+  namespace: red-crew
+spec:
+  transport: streamable-http
+  endpoint: https://mcp.example.com/recon
+  requireConfirmation: true
+  toolFilter:
+    allow:
+      - nmap_scan
+      - dns_enum
+      - osint_lookup
+      - cve_search
+      - port_scan
+      - service_fingerprint

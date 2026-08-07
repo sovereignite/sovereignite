@@ -1,0 +1,16 @@
+name: 'kpt Kubeconform'
+description: 'Validate kpt package with kubeconform'
+inputs:
+  package_path:
+    description: 'Path to kpt package directory'
+    required: true
+  kubernetes_version:
+    description: 'Kubernetes version for schema validation'
+    required: false
+    default: '1.36'
+runs:
+  using: "composite"
+  steps:
+    - name: Validate with kubeconform
+      run: kpt fn eval "${{ inputs.package_path }}" -i ghcr.io/kptdev/krm-functions-catalog/kubeconform:v0.1.4 -- kubernetes-version=${{ inputs.kubernetes_version }}
+      shell: bash

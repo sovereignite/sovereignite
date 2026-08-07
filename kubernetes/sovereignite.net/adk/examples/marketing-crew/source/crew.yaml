@@ -1,0 +1,239 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: Crew
+metadata:
+  name: marketing-team
+  namespace: marketing-crew
+spec:
+  appName: marketing-ops
+  modelRef: gemini-flash
+  members:
+    - name: marketing-lead
+      mode: task
+      description: >
+        Marketing lead. Develops campaign strategy, coordinates
+        specialists, and ensures brand consistency across channels.
+      instruction: >
+        You are the marketing lead. Given a campaign objective,
+        develop strategy, define target audience, coordinate your
+        team across content, SEO, social, and analytics. Ensure
+        all deliverables align with {brand_guidelines} from session state.
+      modelRef: gemini-flash
+      subAgents:
+        - content-writer
+        - seo-analyst
+        - social-media-manager
+        - analytics-analyst
+        - brand-strategist
+      tools:
+        - query_metrics
+        - get_campaign_stats
+      generateContentConfig:
+        temperature: 0.4
+        maxOutputTokens: 4096
+      includeContents: default
+      disallowTransferToParent: true
+      disallowTransferToPeers: false
+      outputKey: campaign_plan
+
+    - name: content-writer
+      mode: single_turn
+      description: >
+        Creates compelling marketing copy: blog posts, emails,
+        landing pages, and ad copy.
+      instruction: >
+        You are a content writer. Given a brief and target audience,
+        create engaging, conversion-focused copy. Match the brand
+        voice, use persuasive language, and include clear CTAs.
+        Optimize for {seo_keywords} from the seo-analyst.
+      modelRef: gemini-flash
+      toolsets:
+        - content-tools
+      includeContents: none
+      disallowTransferToParent: false
+      disallowTransferToPeers: true
+      inputSchema:
+        type: object
+        properties:
+          brief:
+            type: string
+          format:
+            type: string
+            enum: [blog, email, landing_page, ad_copy, social_post]
+          tone:
+            type: string
+            enum: [professional, casual, urgent, friendly, authoritative]
+        required:
+          - brief
+          - format
+      outputSchema:
+        type: object
+        properties:
+          headline:
+            type: string
+          body:
+            type: string
+          cta:
+            type: string
+          word_count:
+            type: integer
+        required:
+          - headline
+          - body
+
+    - name: seo-analyst
+      mode: single_turn
+      description: >
+        Keyword research, content optimization, and competitor
+        analysis for search visibility.
+      instruction: >
+        You are an SEO analyst. Given a topic and target audience,
+        research keywords, analyze competitors, and recommend
+        optimization strategies. Focus on search intent and
+        ranking potential.
+      modelRef: gemini-flash
+      toolsets:
+        - seo-tools
+      includeContents: none
+      disallowTransferToParent: false
+      disallowTransferToPeers: true
+      inputSchema:
+        type: object
+        properties:
+          topic:
+            type: string
+          target_market:
+            type: string
+        required:
+          - topic
+      outputSchema:
+        type: object
+        properties:
+          primary_keywords:
+            type: array
+            items:
+              type: string
+          secondary_keywords:
+            type: array
+            items:
+              type: string
+          competitor_gaps:
+            type: array
+            items:
+              type: string
+          recommendations:
+            type: string
+        required:
+          - primary_keywords
+          - recommendations
+
+    - name: social-media-manager
+      mode: single_turn
+      description: >
+        Social media strategy, content scheduling, and engagement
+        optimization across platforms.
+      instruction: >
+        You are a social media manager. Given campaign goals and
+        content, develop platform-specific strategies, optimal
+        posting schedules, and engagement tactics. Adapt tone
+        for each platform's audience.
+      modelRef: gemini-flash
+      toolsets:
+        - social-tools
+      includeContents: none
+      disallowTransferToParent: false
+      disallowTransferToPeers: true
+      inputSchema:
+        type: object
+        properties:
+          campaign_goal:
+            type: string
+          platforms:
+            type: array
+            items:
+              type: string
+              enum: [twitter, linkedin, instagram, tiktok, facebook]
+        required:
+          - campaign_goal
+          - platforms
+      outputSchema:
+        type: object
+        properties:
+          schedule:
+            type: array
+            items:
+              type: object
+              properties:
+                platform:
+                  type: string
+                time:
+                  type: string
+                content_type:
+                  type: string
+          hashtags:
+            type: array
+            items:
+              type: string
+          engagement_tips:
+            type: string
+        required:
+          - schedule
+
+    - name: analytics-analyst
+      mode: single_turn
+      description: >
+        Campaign performance analysis, ROI measurement, and
+        A/B testing recommendations.
+      instruction: >
+        You are an analytics analyst. Given campaign data, measure
+        performance against KPIs, calculate ROI, identify trends,
+        and recommend A/B tests for optimization. Present data
+        clearly with actionable insights.
+      modelRef: gemini-flash
+      toolsets:
+        - analytics-tools
+      includeContents: none
+      disallowTransferToParent: false
+      disallowTransferToPeers: true
+      inputSchema:
+        type: object
+        properties:
+          campaign_id:
+            type: string
+          metrics:
+            type: array
+            items:
+              type: string
+        required:
+          - campaign_id
+      outputSchema:
+        type: object
+        properties:
+          performance_summary:
+            type: object
+          roi:
+            type: number
+          recommendations:
+            type: array
+            items:
+              type: string
+        required:
+          - performance_summary
+          - roi
+
+    - name: brand-strategist
+      mode: chat
+      description: >
+        Brand voice consistency, messaging frameworks, and
+        positioning strategy.
+      instruction: >
+        You are a brand strategist. Review all team outputs for
+        brand consistency, refine messaging frameworks, and ensure
+        positioning aligns with {campaign_plan} from the marketing lead.
+        Provide feedback on tone, voice, and visual identity alignment.
+      modelRef: gemini-flash
+      generateContentConfig:
+        temperature: 0.3
+      includeContents: default
+      disallowTransferToParent: true
+      disallowTransferToPeers: true
+      outputKey: brand_review

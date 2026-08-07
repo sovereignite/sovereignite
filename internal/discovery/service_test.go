@@ -363,8 +363,8 @@ func TestServiceForwardsAdoptionWithoutInterpretingRequest(t *testing.T) {
 	}
 	request := &transportRequest{opaque: "request-owned-by-transport"}
 	response := &transportResponse{opaque: "response-owned-by-trust"}
-	contextKey := struct{}{}
-	ctx := context.WithValue(context.Background(), contextKey, "transport-context")
+	type contextKey struct{}
+	ctx := context.WithValue(context.Background(), contextKey{}, "transport-context")
 	handler := &fakeAdoptionHandler{response: response}
 	service := newTestService(
 		t,
@@ -386,7 +386,7 @@ func TestServiceForwardsAdoptionWithoutInterpretingRequest(t *testing.T) {
 	if handler.request != request {
 		t.Fatalf("handler request = %#v, want exact transport request %#v", handler.request, request)
 	}
-	if handler.ctx.Value(contextKey) != "transport-context" {
+	if handler.ctx.Value(contextKey{}) != "transport-context" {
 		t.Fatal("handler did not receive the transport context")
 	}
 	if handler.calls != 1 {

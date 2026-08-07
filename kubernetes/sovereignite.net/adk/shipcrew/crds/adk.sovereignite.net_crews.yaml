@@ -1,0 +1,235 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.21.0
+  name: crews.adk.sovereignite.net
+spec:
+  group: adk.sovereignite.net
+  names:
+    kind: Crew
+    listKind: CrewList
+    plural: crews
+    singular: crew
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.modelRef
+      name: Model
+      type: string
+    - jsonPath: .spec.members
+      name: Members
+      type: integer
+    - jsonPath: .status.ready
+      name: Ready
+      type: boolean
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Crew describes a team of ADK LlmAgents backed by a runner.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CrewSpec defines the desired state of a Crew. Maps to runner.Config.
+            properties:
+              appName:
+                description: |-
+                  AppName identifies this application. Used for session namespacing.
+                  Defaults to the Crew resource name if unset.
+                type: string
+              members:
+                description: Members defines the LlmAgents in this crew.
+                items:
+                  description: CrewMember defines an LlmAgent within a Crew. Maps
+                    to llmagent.Config.
+                  properties:
+                    description:
+                      description: |-
+                        Description of the agent's capability. The LLM uses this to determine
+                        whether to delegate control. One-line is enough and preferred.
+                      type: string
+                    disallowTransferToParent:
+                      description: DisallowTransferToParent prevents transferring
+                        to parent agent.
+                      type: boolean
+                    disallowTransferToPeers:
+                      description: DisallowTransferToPeers prevents transferring to
+                        peer agents.
+                      type: boolean
+                    generateContentConfig:
+                      description: |-
+                        GenerateContentConfig is the raw genai.GenerateContentConfig JSON
+                        for model tuning (temperature, topP, maxOutputTokens, etc.).
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    includeContents:
+                      description: IncludeContents controls what conversation history
+                        the agent receives.
+                      enum:
+                      - default
+                      - none
+                      type: string
+                    inputSchema:
+                      description: InputSchema is the JSON Schema for the agent's
+                        input when used as a tool.
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    instruction:
+                      description: |-
+                        Instruction is the agent's system prompt. Supports {key} template
+                        placeholders resolved from session state at runtime.
+                      type: string
+                    mode:
+                      description: Mode is the ADK delegation mode.
+                      enum:
+                      - chat
+                      - task
+                      - single_turn
+                      type: string
+                    modelRef:
+                      description: |-
+                        ModelRef references a ModelBackend resource for this agent.
+                        If unset, falls back to the Crew-level modelRef.
+                      type: string
+                    name:
+                      description: Name must be unique within the crew. Cannot be
+                        "user".
+                      minLength: 1
+                      type: string
+                    outputKey:
+                      description: |-
+                        OutputKey, when set, saves the agent's text reply to session state
+                        under this key. Used to connect agents via shared state.
+                      type: string
+                    outputSchema:
+                      description: |-
+                        OutputSchema is the JSON Schema for the agent's output. When set,
+                        the agent can only reply and cannot use tools or transfer.
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    subAgents:
+                      description: |-
+                        SubAgents lists agent names within this crew that this agent can
+                        delegate to. ADK auto-generates delegation tools for each.
+                      items:
+                        type: string
+                      type: array
+                    tools:
+                      description: |-
+                        Tools lists tool names available to this agent. When combined with
+                        Toolsets, these are added alongside tools discovered from toolsets.
+                      items:
+                        type: string
+                      type: array
+                    toolsets:
+                      description: |-
+                        Toolsets lists MCPServer resource names whose tools are exposed to
+                        this agent. The controller resolves each to a tool.Toolset.
+                      items:
+                        type: string
+                      type: array
+                  required:
+                  - mode
+                  - name
+                  type: object
+                minItems: 1
+                type: array
+              modelRef:
+                description: |-
+                  ModelRef references a ModelBackend resource. Used as the default
+                  model for all members that don't specify their own modelRef.
+                type: string
+            required:
+            - members
+            - modelRef
+            type: object
+          status:
+            description: CrewStatus is the observed state of a Crew.
+            properties:
+              conditions:
+                description: Conditions represent the latest available observations.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              ready:
+                description: |-
+                  Ready indicates whether the crew is fully configured and all
+                  referenced ModelBackends and MCPServers are available.
+                type: boolean
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

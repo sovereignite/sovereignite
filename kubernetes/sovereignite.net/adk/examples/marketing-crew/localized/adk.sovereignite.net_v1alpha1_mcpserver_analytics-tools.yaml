@@ -1,0 +1,16 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: MCPServer
+metadata:
+  name: analytics-tools
+  namespace: marketing-crew
+spec:
+  endpoint: https://mcp.example.com/analytics
+  requireConfirmation: false
+  toolFilter:
+    allow:
+    - query_metrics
+    - get_campaign_stats
+    - ab_test_results
+    - audience_demographics
+    - conversion_funnel
+  transport: streamable-http

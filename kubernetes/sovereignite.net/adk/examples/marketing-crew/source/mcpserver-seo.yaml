@@ -1,0 +1,16 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: MCPServer
+metadata:
+  name: seo-tools
+  namespace: marketing-crew
+spec:
+  transport: streamable-http
+  endpoint: https://mcp.example.com/seo
+  requireConfirmation: false
+  toolFilter:
+    allow:
+      - keyword_research
+      - competitor_analysis
+      - audit_meta
+      - check_rankings
+      - suggest_headlines

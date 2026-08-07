@@ -1,0 +1,47 @@
+name: 'Discover kpt Packages'
+description: 'Find all kpt packages by their Kptfile markers'
+outputs:
+  packages:
+    description: 'List of kpt package descriptors with path and stable id'
+    value: ${{ steps.discover.outputs.packages }}
+  has-targets:
+    description: 'Whether any kpt packages were found'
+    value: ${{ steps.discover.outputs.has-targets }}
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Discover'
+      id: discover
+      run: |
+        package_id() {
+          local id="${1#kubernetes/}"
+          id="${id//\//-}"
+          id="${id//./-}"
+          id="${id//_/-}"
+          while [[ "$id" == *--* ]]; do
+            id="${id//--/-}"
+          done
+          id="${id#-}"
+          id="${id%-}"
+          printf '%s' "$id"
+        }
+
+        mapfile -t packages < <(
+          find kubernetes -type f -name Kptfile -print \
+            | while IFS= read -r kptfile; do dirname "$kptfile"; done \
+            | sort -u
+        )
+
+        if [ "${#packages[@]}" -eq 0 ]; then
+          echo 'packages=[{"path":"__skip__","id":"__skip__"}]' >> "$GITHUB_OUTPUT"
+          echo 'has-targets=false' >> "$GITHUB_OUTPUT"
+        else
+          package_json=$(
+            for package in "${packages[@]}"; do
+              jq -cn --arg path "$package" --arg id "$(package_id "$package")" '{path: $path, id: $id}'
+            done | jq -s -c .
+          )
+          echo "packages=$package_json" >> "$GITHUB_OUTPUT"
+          echo 'has-targets=true' >> "$GITHUB_OUTPUT"
+        fi
+      shell: bash

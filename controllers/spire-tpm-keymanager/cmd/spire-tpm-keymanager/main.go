@@ -89,7 +89,7 @@ func (p *plugin) GenerateKey(ctx context.Context, req *keymanagerv1.GenerateKeyR
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	defer token.Close()
+	defer func() { _ = token.Close() }()
 
 	pub, err := publicKey(req.GetKeyId(), req.GetKeyType(), signer)
 	if err != nil {

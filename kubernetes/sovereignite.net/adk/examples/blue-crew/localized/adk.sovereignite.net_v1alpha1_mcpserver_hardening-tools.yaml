@@ -1,0 +1,15 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: MCPServer
+metadata:
+  name: hardening-tools
+  namespace: blue-crew
+spec:
+  endpoint: https://mcp.example.com/hardening
+  requireConfirmation: true
+  toolFilter:
+    allow:
+    - audit_config
+    - check_compliance
+    - generate_policy
+    - validate_rules
+  transport: streamable-http

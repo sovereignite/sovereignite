@@ -1,0 +1,151 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: Crew
+metadata:
+  name: red-team
+  namespace: red-crew
+spec:
+  appName: red-team-ops
+  modelRef: gemini-pro
+  members:
+    - name: red-lead
+      mode: task
+      description: >
+        Red team lead. Scopes engagement, defines attack scenarios,
+        and coordinates specialist operators.
+      instruction: >
+        You are the red team lead. Given a target scope, decompose
+        the engagement into attack vectors: reconnaissance, vulnerability
+        identification, exploitation planning, and reporting. Delegate
+        to your specialists and synthesize their findings.
+        Use {engagement_scope} from session state for target context.
+      modelRef: gemini-pro
+      subAgents:
+        - recon-operator
+        - vuln-analyst
+        - social-engineer
+      tools:
+        - nmap_scan
+        - dns_enum
+      generateContentConfig:
+        temperature: 0.2
+        maxOutputTokens: 8192
+      includeContents: default
+      disallowTransferToParent: true
+      disallowTransferToPeers: false
+      outputKey: attack_plan
+
+    - name: recon-operator
+      mode: single_turn
+      description: >
+        Performs target reconnaissance: port scanning, service
+        enumeration, DNS analysis, and OSINT gathering.
+      instruction: >
+        You are a recon specialist. Given a target, perform thorough
+        reconnaissance. Identify open ports, running services, DNS
+        records, and any publicly exposed information. Document
+        everything with evidence.
+      modelRef: gemini-pro
+      toolsets:
+        - recon-tools
+      includeContents: none
+      disallowTransferToParent: false
+      disallowTransferToPeers: true
+      inputSchema:
+        type: object
+        properties:
+          target:
+            type: string
+          scan_type:
+            type: string
+            enum: [quick, thorough, stealth]
+        required:
+          - target
+      outputSchema:
+        type: object
+        properties:
+          hosts:
+            type: array
+            items:
+              type: object
+              properties:
+                ip:
+                  type: string
+                ports:
+                  type: array
+                  items:
+                    type: integer
+                services:
+                  type: array
+                  items:
+                    type: string
+          findings:
+            type: array
+            items:
+              type: string
+        required:
+          - hosts
+          - findings
+
+    - name: vuln-analyst
+      mode: single_turn
+      description: >
+        Analyzes reconnaissance data to identify vulnerabilities,
+        map to CVEs, and assess exploitability.
+      instruction: >
+        You are a vulnerability analyst. Given recon data, identify
+        potential vulnerabilities, map them to known CVEs, assess
+        severity and exploitability, and suggest exploitation paths.
+        Cross-reference with exploit-db for known attack vectors.
+      modelRef: gemini-pro
+      toolsets:
+        - exploit-db
+      includeContents: none
+      disallowTransferToParent: false
+      disallowTransferToPeers: true
+      inputSchema:
+        type: object
+        properties:
+          recon_data:
+            type: object
+        required:
+          - recon_data
+      outputSchema:
+        type: object
+        properties:
+          vulnerabilities:
+            type: array
+            items:
+              type: object
+              properties:
+                cve:
+                  type: string
+                severity:
+                  type: string
+                exploitability:
+                  type: string
+                attack_vector:
+                  type: string
+          risk_score:
+            type: integer
+        required:
+          - vulnerabilities
+          - risk_score
+
+    - name: social-engineer
+      mode: chat
+      description: >
+        Analyzes human attack surfaces: phishing vectors, pretexting
+        scenarios, and social engineering opportunities.
+      instruction: >
+        You are a social engineering specialist. Given a target
+        organization, identify potential phishing vectors, pretexting
+        scenarios, and human vulnerabilities. Focus on realistic
+        attack scenarios that could bypass technical controls.
+        Document with {vuln_report} context from the vuln-analyst.
+      modelRef: gemini-pro
+      generateContentConfig:
+        temperature: 0.4
+      includeContents: default
+      disallowTransferToParent: true
+      disallowTransferToPeers: true
+      outputKey: social_engineering_report

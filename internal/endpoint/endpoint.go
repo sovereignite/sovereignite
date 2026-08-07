@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
-	"time"
 )
 
 const (
@@ -82,11 +81,11 @@ func Publish(dir string, record EndpointRecord) (net.Addr, error) {
 		return nil, fmt.Errorf("endpoint: write temp: %w", err)
 	}
 	if err := syncFile(tmp); err != nil {
-		os.Remove(tmp)
+		_ = os.Remove(tmp)
 		return nil, fmt.Errorf("endpoint: sync temp: %w", err)
 	}
 	if err := os.Rename(tmp, filepath.Join(dir, "endpoint.json")); err != nil {
-		os.Remove(tmp)
+		_ = os.Remove(tmp)
 		return nil, fmt.Errorf("endpoint: rename: %w", err)
 	}
 	syncDir(dir)
@@ -178,7 +177,7 @@ func syncFile(path string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return f.Sync()
 }
 
@@ -188,8 +187,8 @@ func syncDir(dir string) {
 	if err != nil {
 		return
 	}
-	defer f.Close()
-	f.Sync()
+	defer func() { _ = f.Close() }()
+	_ = f.Sync()
 }
 
 // NewServiceDir returns the directory path for a service's endpoint record.
@@ -270,11 +269,4 @@ func RecordFromFile(path string) (EndpointRecord, error) {
 	return rec, nil
 }
 
-// randomPort is a helper that returns the OS-assigned port from a listener
-// bound to port 0 on loopback.
-func randomPort(l net.Listener) int {
-	return l.Addr().(*net.TCPAddr).Port
-}
 
-// now is a monotonic timestamp for staleness checks. Exported for tests.
-var now = time.Now

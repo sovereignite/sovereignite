@@ -118,7 +118,7 @@ func runWithConfig(
 		return fmt.Errorf("open Key Manager IPNS signer: %w", err)
 	}
 	if signer == nil {
-		return errors.New("Key Manager returned no IPNS signer")
+		return errors.New("key manager returned no IPNS signer")
 	}
 	if deps.openNode == nil {
 		return ipfs.ErrFullKuboIntegrationUnavailable

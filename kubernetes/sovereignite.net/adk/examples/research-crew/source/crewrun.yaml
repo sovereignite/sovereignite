@@ -1,0 +1,13 @@
+apiVersion: adk.sovereignite.net/v1alpha1
+kind: CrewRun
+metadata:
+  name: research-run-001
+  namespace: research-crew
+spec:
+  crewRef: research-team
+  userID: alice
+  sessionID: session-alice-001
+  message:
+    text: "What are the security implications of TPM-backed keys in Kubernetes?"
+  streamingMode: sse
+  saveInputBlobsAsArtifacts: false

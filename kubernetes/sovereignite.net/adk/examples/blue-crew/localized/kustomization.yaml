@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- adk.sovereignite.net_v1alpha1_crew_blue-team.yaml
+- adk.sovereignite.net_v1alpha1_crewrun_blue-incident-001.yaml
+- adk.sovereignite.net_v1alpha1_mcpserver_hardening-tools.yaml
+- adk.sovereignite.net_v1alpha1_mcpserver_siem-tools.yaml
+- adk.sovereignite.net_v1alpha1_modelbackend_gemini-flash.yaml
+- v1_namespace_blue-crew.yaml
