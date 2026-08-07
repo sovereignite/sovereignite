@@ -83,9 +83,13 @@ builds:
     dir: .
     main: ./controllers/spire-tpm-keymanager/cmd/spire-tpm-keymanager
     env:
-      - CGO_ENABLED=0
+      # PKCS#11 is exposed through cgo; keep the resulting binary static for
+      # the distroless runtime image.
+      - CGO_ENABLED=1
     ldflags:
       - -s -w
+      - -linkmode external
+      - -extldflags "-static"
 
   - id: k8s-tpm-csr-signer
     dir: .
