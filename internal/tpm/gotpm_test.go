@@ -6,7 +6,8 @@ package tpm
 
 import (
 	"bytes"
-	"crypto/elliptic"
+	"crypto/ecdh"
+	"crypto/rand"
 	"encoding/asn1"
 	"errors"
 	"math/big"
@@ -133,7 +134,13 @@ func TestConvertGoTPMPublicRecomputesNameAndValidatesTemplate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	x, y := elliptic.P256().ScalarBaseMult([]byte{7})
+	privKey, err := ecdh.P256().GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pubBytes := privKey.PublicKey().Bytes()
+	x := new(big.Int).SetBytes(pubBytes[1:33])
+	y := new(big.Int).SetBytes(pubBytes[33:])
 	publicArea.Unique = gotpm.NewTPMUPublicID(
 		gotpm.TPMAlgECC,
 		&gotpm.TPMSECCPoint{

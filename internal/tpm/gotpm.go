@@ -277,7 +277,7 @@ func (b *goTPMBackend) CreatePersistent(
 	}
 	if created == nil {
 		return Public{}, errors.Join(
-			errors.New("Create returned a nil response"),
+			errors.New("create returned a nil response"),
 			createSessionErr,
 		)
 	}
@@ -319,7 +319,7 @@ func (b *goTPMBackend) CreatePersistent(
 	}
 	if loaded == nil {
 		return Public{}, errors.Join(
-			errors.New("Load returned a nil response"),
+			errors.New("load returned a nil response"),
 			loadSessionErr,
 		)
 	}
