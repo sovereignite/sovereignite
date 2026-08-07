@@ -41,6 +41,7 @@ jobs:
         uses: ./.github/actions/ko-build
         with:
           import-path: ${{ inputs.import-path }}
+          target-id: ${{ inputs.target-id }}
           tag: ${{ inputs.tag }}
           go-version-file: ${{ inputs.go-version-file }}
 
