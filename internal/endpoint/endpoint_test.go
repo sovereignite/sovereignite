@@ -380,9 +380,9 @@ func TestRecordFromFileRejectsSymlink(t *testing.T) {
 	dir := t.TempDir()
 	realFile := filepath.Join(dir, "real.json")
 	data := []byte(`{"version":1,"service":"test","boot_id":"b","instance_nonce":"n","pid":1,"network":"tcp","address":"127.0.0.1","port":1234}`)
-	os.WriteFile(realFile, data, filePerms)
+	_ = os.WriteFile(realFile, data, filePerms)
 	linkFile := filepath.Join(dir, "endpoint.json")
-	os.Symlink(realFile, linkFile)
+	_ = os.Symlink(realFile, linkFile)
 	_, err := RecordFromFile(linkFile)
 	if !errors.Is(err, ErrSymlinkDetected) {
 		t.Errorf("RecordFromFile err = %v, want ErrSymlinkDetected", err)
