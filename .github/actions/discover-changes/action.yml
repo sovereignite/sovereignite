@@ -1,0 +1,65 @@
+name: 'Discover Changes'
+description: 'Compute the changed file set once for matrix discovery'
+inputs:
+  base-sha:
+    description: 'Previous commit for master change detection'
+    required: false
+  head-sha:
+    description: 'Current commit for change detection'
+    required: false
+  base-ref:
+    description: 'Base branch used for branch-wide change detection'
+    required: false
+    default: 'master'
+  use-branch-base:
+    description: 'Whether to diff from the base branch merge-base'
+    required: false
+    default: 'false'
+outputs:
+  changed-files:
+    description: 'Newline-delimited changed file paths'
+    value: ${{ steps.discover.outputs.changed-files }}
+  full-build:
+    description: 'Whether the changed file set is unavailable and all targets are required'
+    value: ${{ steps.discover.outputs.full-build }}
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Discover'
+      id: discover
+      env:
+        BASE_SHA: ${{ inputs.base-sha }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        BASE_REF: ${{ inputs.base-ref }}
+        USE_BRANCH_BASE: ${{ inputs.use-branch-base }}
+      run: |
+        base_sha="$BASE_SHA"
+        full_build=false
+        changed=''
+
+        if [ "$USE_BRANCH_BASE" = true ]; then
+          if ! git fetch --no-tags origin "$BASE_REF"; then
+            full_build=true
+          else
+            base_sha=$(git merge-base "$HEAD_SHA" "origin/$BASE_REF" || true)
+            if [ -z "$base_sha" ]; then
+              full_build=true
+            fi
+          fi
+        fi
+
+        if [ "$full_build" = false ] && { [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$base_sha^{commit}" 2>/dev/null; }; then
+          full_build=true
+        fi
+
+        if [ "$full_build" = false ]; then
+          changed=$(git diff --name-only "$base_sha" "$HEAD_SHA")
+        fi
+
+        {
+          echo 'changed-files<<EOF'
+          printf '%s\n' "$changed"
+          echo EOF
+          echo "full-build=$full_build"
+        } >> "$GITHUB_OUTPUT"
+      shell: bash

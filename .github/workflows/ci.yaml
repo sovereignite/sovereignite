@@ -18,52 +18,100 @@ permissions:
   issues: write
 
 jobs:
+  discover-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed-files: ${{ steps.discover.outputs.changed-files }}
+      full-build: ${{ steps.discover.outputs.full-build }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: "Discover changes"
+        id: discover
+        uses: ./.github/actions/discover-changes
+        with:
+          base-sha: ${{ github.event.before }}
+          head-sha: ${{ github.sha }}
+          base-ref: master
+          use-branch-base: ${{ github.ref != 'refs/heads/master' }}
+
   discover-go:
+    needs: discover-changes
     runs-on: ubuntu-latest
     outputs:
       commands: ${{ steps.discover.outputs.commands }}
+      has-targets: ${{ steps.discover.outputs.has-targets }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
 
       - name: "Discover"
         id: discover
         uses: ./.github/actions/discover-go-commands
+        with:
+          changed-files: ${{ needs.discover-changes.outputs.changed-files }}
+          full-build: ${{ needs.discover-changes.outputs.full-build }}
 
   discover-controllers:
+    needs: discover-changes
     runs-on: ubuntu-latest
     outputs:
       controllers: ${{ steps.discover.outputs.controllers }}
+      has-targets: ${{ steps.discover.outputs.has-targets }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
 
       - name: "Discover"
         id: discover
         uses: ./.github/actions/discover-controllers
+        with:
+          changed-files: ${{ needs.discover-changes.outputs.changed-files }}
+          full-build: ${{ needs.discover-changes.outputs.full-build }}
 
   discover-kpt:
+    needs: discover-changes
     runs-on: ubuntu-latest
     outputs:
       functions: ${{ steps.discover.outputs.functions }}
+      has-targets: ${{ steps.discover.outputs.has-targets }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
 
       - name: "Discover"
         id: discover
         uses: ./.github/actions/discover-kpt-functions
+        with:
+          changed-files: ${{ needs.discover-changes.outputs.changed-files }}
+          full-build: ${{ needs.discover-changes.outputs.full-build }}
 
   discover-libraries:
+    needs: discover-changes
     runs-on: ubuntu-latest
     outputs:
       libraries: ${{ steps.discover.outputs.libraries }}
+      has-targets: ${{ steps.discover.outputs.has-targets }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
 
       - name: "Discover"
         id: discover
         uses: ./.github/actions/discover-libraries
+        with:
+          changed-files: ${{ needs.discover-changes.outputs.changed-files }}
+          full-build: ${{ needs.discover-changes.outputs.full-build }}
 
   # ─── LINT ────────────────────────────────────────────────────────────
   lint-go:
+    if: needs.discover-go.outputs.has-targets == 'true'
     needs: discover-go
     runs-on: ubuntu-latest
     strategy:
@@ -79,6 +127,7 @@ jobs:
           paths: ./cmd/${{ matrix.command }}/...
 
   lint-controllers:
+    if: needs.discover-controllers.outputs.has-targets == 'true'
     needs: discover-controllers
     runs-on: ubuntu-latest
     strategy:
@@ -94,6 +143,7 @@ jobs:
           paths: ./controllers/${{ matrix.controller }}/...
 
   lint-kpt:
+    if: needs.discover-kpt.outputs.has-targets == 'true'
     needs: discover-kpt
     runs-on: ubuntu-latest
     strategy:
@@ -109,6 +159,7 @@ jobs:
           paths: ./${{ matrix.function }}/...
 
   lint-libraries:
+    if: needs.discover-libraries.outputs.has-targets == 'true'
     needs: discover-libraries
     runs-on: ubuntu-latest
     strategy:
@@ -125,6 +176,7 @@ jobs:
 
   # ─── TEST ────────────────────────────────────────────────────────────
   test-go:
+    if: needs.discover-go.outputs.has-targets == 'true'
     needs: [lint-go, discover-go]
     runs-on: ubuntu-latest
     strategy:
@@ -140,6 +192,7 @@ jobs:
           paths: ./cmd/${{ matrix.command }}/...
 
   test-controllers:
+    if: needs.discover-controllers.outputs.has-targets == 'true'
     needs: [lint-controllers, discover-controllers]
     runs-on: ubuntu-latest
     strategy:
@@ -155,6 +208,7 @@ jobs:
           paths: ./controllers/${{ matrix.controller }}/...
 
   test-kpt:
+    if: needs.discover-kpt.outputs.has-targets == 'true'
     needs: [lint-kpt, discover-kpt]
     runs-on: ubuntu-latest
     strategy:
@@ -170,6 +224,7 @@ jobs:
           paths: ./${{ matrix.function }}/...
 
   test-libraries:
+    if: needs.discover-libraries.outputs.has-targets == 'true'
     needs: [lint-libraries, discover-libraries]
     runs-on: ubuntu-latest
     strategy:
@@ -186,16 +241,20 @@ jobs:
 
   quality-gate:
     if: always()
-    needs: [test-go, test-controllers, test-kpt, test-libraries]
+    needs: [discover-go, discover-controllers, discover-kpt, discover-libraries, test-go, test-controllers, test-kpt, test-libraries]
     runs-on: ubuntu-latest
     steps:
       - name: "Require all test matrices to pass"
         if: >-
           ${{
-            needs.test-go.result != 'success' ||
-            needs.test-controllers.result != 'success' ||
-            needs.test-kpt.result != 'success' ||
-            needs.test-libraries.result != 'success'
+            needs.discover-go.result != 'success' ||
+            needs.discover-controllers.result != 'success' ||
+            needs.discover-kpt.result != 'success' ||
+            needs.discover-libraries.result != 'success' ||
+            (needs.discover-go.outputs.has-targets == 'true' && needs.test-go.result != 'success') ||
+            (needs.discover-controllers.outputs.has-targets == 'true' && needs.test-controllers.result != 'success') ||
+            (needs.discover-kpt.outputs.has-targets == 'true' && needs.test-kpt.result != 'success') ||
+            (needs.discover-libraries.outputs.has-targets == 'true' && needs.test-libraries.result != 'success')
           }}
         run: |
           echo "One or more quality matrices did not pass."
@@ -203,6 +262,7 @@ jobs:
 
   # ─── BUILD ───────────────────────────────────────────────────────────
   build-go:
+    if: needs.discover-go.outputs.has-targets == 'true'
     needs: [quality-gate, discover-go]
     strategy:
       fail-fast: true
@@ -213,6 +273,7 @@ jobs:
       import-path: ./cmd/${{ matrix.command }}
 
   build-controllers:
+    if: needs.discover-controllers.outputs.has-targets == 'true'
     needs: [quality-gate, discover-controllers]
     strategy:
       fail-fast: true
@@ -223,6 +284,7 @@ jobs:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   build-kpt:
+    if: needs.discover-kpt.outputs.has-targets == 'true'
     needs: [quality-gate, discover-kpt]
     strategy:
       fail-fast: true
@@ -234,15 +296,18 @@ jobs:
 
   build-gate:
     if: always()
-    needs: [build-go, build-controllers, build-kpt]
+    needs: [discover-go, discover-controllers, discover-kpt, build-go, build-controllers, build-kpt]
     runs-on: ubuntu-latest
     steps:
       - name: "Require all build matrices to pass"
         if: >-
           ${{
-            needs.build-go.result != 'success' ||
-            needs.build-controllers.result != 'success' ||
-            needs.build-kpt.result != 'success'
+            needs.discover-go.result != 'success' ||
+            needs.discover-controllers.result != 'success' ||
+            needs.discover-kpt.result != 'success' ||
+            (needs.discover-go.outputs.has-targets == 'true' && needs.build-go.result != 'success') ||
+            (needs.discover-controllers.outputs.has-targets == 'true' && needs.build-controllers.result != 'success') ||
+            (needs.discover-kpt.outputs.has-targets == 'true' && needs.build-kpt.result != 'success')
           }}
         run: |
           echo "One or more image build matrices did not pass."
@@ -250,6 +315,7 @@ jobs:
 
   # ─── SCAN ────────────────────────────────────────────────────────────
   scan-go:
+    if: needs.discover-go.outputs.has-targets == 'true'
     needs: [build-gate, discover-go]
     strategy:
       fail-fast: true
@@ -260,6 +326,7 @@ jobs:
       import-path: ./cmd/${{ matrix.command }}
 
   scan-controllers:
+    if: needs.discover-controllers.outputs.has-targets == 'true'
     needs: [build-gate, discover-controllers]
     strategy:
       fail-fast: true
@@ -270,6 +337,7 @@ jobs:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   scan-kpt:
+    if: needs.discover-kpt.outputs.has-targets == 'true'
     needs: [build-gate, discover-kpt]
     strategy:
       fail-fast: true
@@ -281,15 +349,18 @@ jobs:
 
   scan-gate:
     if: always()
-    needs: [scan-go, scan-controllers, scan-kpt]
+    needs: [discover-go, discover-controllers, discover-kpt, scan-go, scan-controllers, scan-kpt]
     runs-on: ubuntu-latest
     steps:
       - name: "Require all scan matrices to pass"
         if: >-
           ${{
-            needs.scan-go.result != 'success' ||
-            needs.scan-controllers.result != 'success' ||
-            needs.scan-kpt.result != 'success'
+            needs.discover-go.result != 'success' ||
+            needs.discover-controllers.result != 'success' ||
+            needs.discover-kpt.result != 'success' ||
+            (needs.discover-go.outputs.has-targets == 'true' && needs.scan-go.result != 'success') ||
+            (needs.discover-controllers.outputs.has-targets == 'true' && needs.scan-controllers.result != 'success') ||
+            (needs.discover-kpt.outputs.has-targets == 'true' && needs.scan-kpt.result != 'success')
           }}
         run: |
           echo "One or more image scan matrices did not pass."
@@ -297,7 +368,7 @@ jobs:
 
   # ─── SIGN ────────────────────────────────────────────────────────────
   sign-go:
-    if: github.ref == 'refs/heads/master'
+    if: needs.discover-go.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
     needs: [scan-gate, discover-go]
     strategy:
       fail-fast: true
@@ -308,7 +379,7 @@ jobs:
       import-path: ./cmd/${{ matrix.command }}
 
   sign-controllers:
-    if: github.ref == 'refs/heads/master'
+    if: needs.discover-controllers.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
     needs: [scan-gate, discover-controllers]
     strategy:
       fail-fast: true
@@ -319,7 +390,7 @@ jobs:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   sign-kpt:
-    if: github.ref == 'refs/heads/master'
+    if: needs.discover-kpt.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
     needs: [scan-gate, discover-kpt]
     strategy:
       fail-fast: true
@@ -331,7 +402,7 @@ jobs:
 
   sign-gate:
     if: always()
-    needs: [sign-go, sign-controllers, sign-kpt]
+    needs: [discover-go, discover-controllers, discover-kpt, sign-go, sign-controllers, sign-kpt]
     runs-on: ubuntu-latest
     steps:
       - name: "Skip signing gate on feature branches"
@@ -343,9 +414,9 @@ jobs:
           ${{
             github.ref == 'refs/heads/master' &&
             (
-              needs.sign-go.result != 'success' ||
-              needs.sign-controllers.result != 'success' ||
-              needs.sign-kpt.result != 'success'
+              (needs.discover-go.outputs.has-targets == 'true' && needs.sign-go.result != 'success') ||
+              (needs.discover-controllers.outputs.has-targets == 'true' && needs.sign-controllers.result != 'success') ||
+              (needs.discover-kpt.outputs.has-targets == 'true' && needs.sign-kpt.result != 'success')
             )
           }}
         run: |
@@ -354,7 +425,7 @@ jobs:
 
   # ─── ATTEST ──────────────────────────────────────────────────────────
   attest-go:
-    if: github.ref == 'refs/heads/master'
+    if: needs.discover-go.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
     needs: [sign-gate, discover-go]
     strategy:
       fail-fast: true
@@ -365,7 +436,7 @@ jobs:
       import-path: ./cmd/${{ matrix.command }}
 
   attest-controllers:
-    if: github.ref == 'refs/heads/master'
+    if: needs.discover-controllers.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
     needs: [sign-gate, discover-controllers]
     strategy:
       fail-fast: true
@@ -376,7 +447,7 @@ jobs:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   attest-kpt:
-    if: github.ref == 'refs/heads/master'
+    if: needs.discover-kpt.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
     needs: [sign-gate, discover-kpt]
     strategy:
       fail-fast: true
@@ -484,7 +555,7 @@ jobs:
         always() &&
         contains(needs.*.result, 'failure')
       }}
-    needs: [discover-go, discover-controllers, discover-kpt, discover-libraries, lint-go, lint-controllers, lint-kpt, lint-libraries, test-go, test-controllers, test-kpt, test-libraries, quality-gate, build-go, build-controllers, build-kpt, build-gate, scan-go, scan-controllers, scan-kpt, scan-gate, sign-go, sign-controllers, sign-kpt, sign-gate, attest-go, attest-controllers, attest-kpt, kpt-render, kpt-validate, kpt-provenance]
+    needs: [discover-changes, discover-go, discover-controllers, discover-kpt, discover-libraries, lint-go, lint-controllers, lint-kpt, lint-libraries, test-go, test-controllers, test-kpt, test-libraries, quality-gate, build-go, build-controllers, build-kpt, build-gate, scan-go, scan-controllers, scan-kpt, scan-gate, sign-go, sign-controllers, sign-kpt, sign-gate, attest-go, attest-controllers, attest-kpt, kpt-render, kpt-validate, kpt-provenance]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

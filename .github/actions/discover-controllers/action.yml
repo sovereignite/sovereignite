@@ -1,15 +1,49 @@
 name: 'Discover Controllers'
 description: 'Find all controllers in controllers/*'
+inputs:
+  changed-files:
+    description: 'Newline-delimited changed file paths'
+    required: false
+  full-build:
+    description: 'Whether all targets are required'
+    required: false
+    default: 'false'
 outputs:
   controllers:
     description: 'List of controller names'
     value: ${{ steps.discover.outputs.controllers }}
+  has-targets:
+    description: 'Whether any controllers are affected'
+    value: ${{ steps.discover.outputs.has-targets }}
 runs:
   using: "composite"
   steps:
     - name: "Discover"
       id: discover
+      env:
+        CHANGED_FILES: ${{ inputs.changed-files }}
+        FULL_BUILD: ${{ inputs.full-build }}
       run: |
-        CONTROLLERS=$(find controllers -maxdepth 1 -type d -not -name controllers -not -name internal -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
-        echo "controllers=$CONTROLLERS" >> $GITHUB_OUTPUT
+        mapfile -t candidates < <(find controllers -maxdepth 1 -type d -not -name controllers -not -name internal -exec basename {} \; | sort)
+        changed="$CHANGED_FILES"
+        full_build="$FULL_BUILD"
+        if printf '%s\n' "$changed" | awk '/^\.github\// || /^(go\.mod|go\.sum|go\.work|go\.work\.sum|\.ko\.yaml)$/ || /^controllers\/internal\// { found=1 } END { exit !found }'; then
+          full_build=true
+        fi
+
+        selected=()
+        for controller in "${candidates[@]}"; do
+          if [ "$full_build" = true ] || printf '%s\n' "$changed" | awk -v prefix="controllers/$controller/" '$0 ~ "^" prefix { found=1 } END { exit !found }'; then
+            selected+=("$controller")
+          fi
+        done
+
+        if [ "${#selected[@]}" -eq 0 ]; then
+          echo 'controllers=["__skip__"]' >> "$GITHUB_OUTPUT"
+          echo 'has-targets=false' >> "$GITHUB_OUTPUT"
+        else
+          controllers=$(printf '%s\n' "${selected[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "controllers=$controllers" >> "$GITHUB_OUTPUT"
+          echo 'has-targets=true' >> "$GITHUB_OUTPUT"
+        fi
       shell: bash
