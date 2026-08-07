@@ -1,4 +1,4 @@
-name: shipcrew
+name: CI
 
 on:
   push:
