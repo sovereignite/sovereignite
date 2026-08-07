@@ -12,6 +12,9 @@ on:
       kpt-functions:
         description: 'kpt functions in kubernetes/*/kpt-functions/*'
         value: ${{ jobs.discover.outputs.kpt-functions }}
+      libraries:
+        description: 'Shared libraries in internal/*'
+        value: ${{ jobs.discover.outputs.libraries }}
 
 jobs:
   discover:
@@ -20,6 +23,7 @@ jobs:
       go-commands: ${{ steps.discover.outputs.go-commands }}
       controllers: ${{ steps.discover.outputs.controllers }}
       kpt-functions: ${{ steps.discover.outputs.kpt-functions }}
+      libraries: ${{ steps.discover.outputs.libraries }}
     steps:
       - uses: actions/checkout@v7
 
@@ -37,4 +41,8 @@ jobs:
           # kpt functions (kubernetes/*/kpt-functions/*)
           KPT_FUNCTIONS=$(find kubernetes/*/kpt-functions -maxdepth 1 -type d -not -name kpt-functions | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "kpt-functions=$KPT_FUNCTIONS" >> $GITHUB_OUTPUT
+
+          # Shared libraries (internal/*)
+          LIBRARIES=$(find internal -maxdepth 1 -type d -not -name internal | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "libraries=$LIBRARIES" >> $GITHUB_OUTPUT
         shell: bash
