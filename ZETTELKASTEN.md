@@ -45,3 +45,10 @@ References:
 
 Links:
 - see-also: 202608040000
+
+## 202608060001 Unified Target Discovery Graph
+
+The Bash `discover-changes` step is a useful prototype for a future Go tool. A durable target-discovery tool could intelligently identify all potential targets and their relationships, produce one unified graph, and expose that graph to GitHub Actions for dynamic matrix generation.
+
+References:
+- technical: `.github/actions/discover-changes/action.yml`
