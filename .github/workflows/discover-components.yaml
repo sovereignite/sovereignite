@@ -4,16 +4,16 @@ on:
   workflow_call:
     outputs:
       go-commands:
-        description: 'Go commands in cmd/*'
+        description: 'Go command names in cmd/*'
         value: ${{ jobs.discover.outputs.go-commands }}
       controllers:
-        description: 'Controllers in controllers/*/cmd/*'
+        description: 'Controller names in controllers/*'
         value: ${{ jobs.discover.outputs.controllers }}
       kpt-functions:
-        description: 'kpt functions in kubernetes/*/kpt-functions/*'
+        description: 'kpt function names in kubernetes/*/kpt-functions/*'
         value: ${{ jobs.discover.outputs.kpt-functions }}
       libraries:
-        description: 'Shared libraries in internal/*'
+        description: 'Library names in internal/*'
         value: ${{ jobs.discover.outputs.libraries }}
 
 jobs:
@@ -30,19 +30,19 @@ jobs:
       - name: "Discover"
         id: discover
         run: |
-          # Go commands (cmd/*), excluding client
-          GO_COMMANDS=$(find cmd -maxdepth 1 -type d -not -name cmd -not -name client | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          # Go command names (cmd/*), excluding client
+          GO_COMMANDS=$(find cmd -maxdepth 1 -type d -not -name cmd -not -name client -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "go-commands=$GO_COMMANDS" >> $GITHUB_OUTPUT
 
-          # Controllers (controllers/*/cmd/*)
-          CONTROLLERS=$(find controllers -type d -name "cmd" -exec dirname {} \; | xargs -I {} basename {} | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          # Controller names (controllers/*)
+          CONTROLLERS=$(find controllers -maxdepth 1 -type d -not -name controllers -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "controllers=$CONTROLLERS" >> $GITHUB_OUTPUT
 
-          # kpt functions (kubernetes/*/kpt-functions/*)
-          KPT_FUNCTIONS=$(find kubernetes/*/kpt-functions -maxdepth 1 -type d -not -name kpt-functions | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          # kpt function names (kubernetes/*/kpt-functions/*)
+          KPT_FUNCTIONS=$(find kubernetes/*/kpt-functions -maxdepth 1 -type d -not -name kpt-functions -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "kpt-functions=$KPT_FUNCTIONS" >> $GITHUB_OUTPUT
 
-          # Shared libraries (internal/*)
-          LIBRARIES=$(find internal -maxdepth 1 -type d -not -name internal | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          # Library names (internal/*)
+          LIBRARIES=$(find internal -maxdepth 1 -type d -not -name internal -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "libraries=$LIBRARIES" >> $GITHUB_OUTPUT
         shell: bash
