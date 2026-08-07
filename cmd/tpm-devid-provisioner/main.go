@@ -76,7 +76,7 @@ func run(opts options) error {
 	if err != nil {
 		return fmt.Errorf("open TPM %q: %w", opts.device, err)
 	}
-	defer rwc.Close()
+	defer func() { _ = rwc.Close() }()
 
 	keyTemplate, srkTemplate, err := templates(opts.keyType)
 	if err != nil {
@@ -94,7 +94,7 @@ func run(opts options) error {
 	if err != nil {
 		return fmt.Errorf("create SRK: %w", err)
 	}
-	defer tpm2.FlushContext(rwc, srkHandle)
+	defer func() { _ = tpm2.FlushContext(rwc, srkHandle) }()
 
 	privBlob, pubBlob, _, _, _, err := tpm2.CreateKey(
 		rwc,
