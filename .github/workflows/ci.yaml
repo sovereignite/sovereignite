@@ -397,7 +397,7 @@ jobs:
 
   # ─── SIGN ────────────────────────────────────────────────────────────
   sign-go:
-    if: needs.discover-go.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
+    if: needs.discover-go.outputs.has-targets == 'true'
     needs: [scan-gate, discover-go]
     strategy:
       fail-fast: true
@@ -409,7 +409,7 @@ jobs:
       target-id: go-${{ matrix.command }}
 
   sign-controllers:
-    if: needs.discover-controllers.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
+    if: needs.discover-controllers.outputs.has-targets == 'true'
     needs: [scan-gate, discover-controllers]
     strategy:
       fail-fast: true
@@ -421,7 +421,7 @@ jobs:
       target-id: controller-${{ matrix.controller }}
 
   sign-kpt:
-    if: needs.discover-kpt.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
+    if: needs.discover-kpt.outputs.has-targets == 'true'
     needs: [scan-gate, discover-kpt]
     strategy:
       fail-fast: true
@@ -437,19 +437,12 @@ jobs:
     needs: [discover-go, discover-controllers, discover-kpt, sign-go, sign-controllers, sign-kpt]
     runs-on: ubuntu-latest
     steps:
-      - name: "Skip signing gate on feature branches"
-        if: github.ref != 'refs/heads/master'
-        run: echo "Signing and attestation are master-only."
-
       - name: "Require all signing matrices to pass"
         if: >-
           ${{
-            github.ref == 'refs/heads/master' &&
-            (
-              (needs.discover-go.outputs.has-targets == 'true' && needs.sign-go.result != 'success') ||
-              (needs.discover-controllers.outputs.has-targets == 'true' && needs.sign-controllers.result != 'success') ||
-              (needs.discover-kpt.outputs.has-targets == 'true' && needs.sign-kpt.result != 'success')
-            )
+            (needs.discover-go.outputs.has-targets == 'true' && needs.sign-go.result != 'success') ||
+            (needs.discover-controllers.outputs.has-targets == 'true' && needs.sign-controllers.result != 'success') ||
+            (needs.discover-kpt.outputs.has-targets == 'true' && needs.sign-kpt.result != 'success')
           }}
         run: |
           echo "One or more image signing matrices did not pass."
@@ -457,7 +450,7 @@ jobs:
 
   # ─── ATTEST ──────────────────────────────────────────────────────────
   attest-go:
-    if: needs.discover-go.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
+    if: needs.discover-go.outputs.has-targets == 'true'
     needs: [sign-gate, discover-go]
     strategy:
       fail-fast: true
@@ -469,7 +462,7 @@ jobs:
       target-id: go-${{ matrix.command }}
 
   attest-controllers:
-    if: needs.discover-controllers.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
+    if: needs.discover-controllers.outputs.has-targets == 'true'
     needs: [sign-gate, discover-controllers]
     strategy:
       fail-fast: true
@@ -481,7 +474,7 @@ jobs:
       target-id: controller-${{ matrix.controller }}
 
   attest-kpt:
-    if: needs.discover-kpt.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
+    if: needs.discover-kpt.outputs.has-targets == 'true'
     needs: [sign-gate, discover-kpt]
     strategy:
       fail-fast: true
@@ -497,7 +490,6 @@ jobs:
     if: >-
       ${{
         always() &&
-        github.ref == 'refs/heads/master' &&
         needs.discover-kpt-packages.result == 'success' &&
         needs.discover-kpt-packages.outputs.has-targets == 'true' &&
         needs.discover-go.result == 'success' &&
@@ -570,7 +562,6 @@ jobs:
   kpt-provenance:
     if: >-
       ${{
-        github.ref == 'refs/heads/master' &&
         needs.discover-kpt-packages.outputs.has-targets == 'true' &&
         needs.kpt-validate.result == 'success' &&
         needs.attest-kpt.result == 'success'
