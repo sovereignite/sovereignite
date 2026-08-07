@@ -20,20 +20,40 @@ jobs:
   discover:
     uses: ./.github/workflows/discover-components.yaml
 
-  lint:
+  lint-go:
     needs: discover
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        command: ${{ fromJson(needs.discover.outputs.go-commands) }}
     steps:
       - uses: actions/checkout@v7
 
       - name: "Lint"
         uses: ./.github/actions/lint
         with:
-          paths: ./cmd/... ./internal/... ./controllers/...
+          paths: ./cmd/${{ matrix.command }}/... ./internal/...
 
-  test:
-    needs: lint
+  lint-controllers:
+    needs: discover
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        controller: ${{ fromJson(needs.discover.outputs.controllers) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Lint"
+        uses: ./.github/actions/lint
+        with:
+          paths: ./controllers/${{ matrix.controller }}/...
+
+  test-go:
+    needs: lint-go
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        command: ${{ fromJson(needs.discover.outputs.go-commands) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -42,8 +62,22 @@ jobs:
         with:
           paths: ./internal/...
 
+  test-controllers:
+    needs: lint-controllers
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        controller: ${{ fromJson(needs.discover.outputs.controllers) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Test"
+        uses: ./.github/actions/test
+        with:
+          paths: ./controllers/${{ matrix.controller }}/...
+
   go-command:
-    needs: [test, discover]
+    needs: [test-go, discover]
     strategy:
       matrix:
         command: ${{ fromJson(needs.discover.outputs.go-commands) }}
@@ -52,7 +86,7 @@ jobs:
       import-path: ./cmd/${{ matrix.command }}
 
   controller:
-    needs: [test, discover]
+    needs: [test-controllers, discover]
     strategy:
       matrix:
         controller: ${{ fromJson(needs.discover.outputs.controllers) }}
@@ -61,7 +95,7 @@ jobs:
       import-path: ./controllers/${{ matrix.controller }}/cmd
 
   kpt-function:
-    needs: [test, discover]
+    needs: discover
     strategy:
       matrix:
         function: ${{ fromJson(needs.discover.outputs.kpt-functions) }}
@@ -71,7 +105,7 @@ jobs:
 
   notify-failure:
     if: failure() && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
-    needs: [discover, lint, test, go-command, controller, kpt-function]
+    needs: [discover, lint-go, lint-controllers, test-go, test-controllers, go-command, controller, kpt-function]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
