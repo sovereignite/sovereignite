@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
-	"time"
 )
 
 const (
@@ -270,11 +269,4 @@ func RecordFromFile(path string) (EndpointRecord, error) {
 	return rec, nil
 }
 
-// randomPort is a helper that returns the OS-assigned port from a listener
-// bound to port 0 on loopback.
-func randomPort(l net.Listener) int {
-	return l.Addr().(*net.TCPAddr).Port
-}
 
-// now is a monotonic timestamp for staleness checks. Exported for tests.
-var now = time.Now
