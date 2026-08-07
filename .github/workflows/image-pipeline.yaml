@@ -39,7 +39,7 @@ jobs:
       image: ${{ steps.build.outputs.image }}
       digest: ${{ steps.build.outputs.digest }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: "Build"
         id: build
@@ -53,7 +53,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: "Scan"
         uses: ./.github/actions/image-scan
@@ -66,7 +66,7 @@ jobs:
     needs: [build, scan]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: "Sign"
         uses: ./.github/actions/image-sign
@@ -79,7 +79,7 @@ jobs:
     needs: [build, sign]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: "Attest"
         uses: ./.github/actions/image-attest
