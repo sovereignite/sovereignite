@@ -1,0 +1,89 @@
+name: Image Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      import-path:
+        description: 'Go import path to build'
+        required: true
+        type: string
+      tag:
+        description: 'Image tag (defaults to branch name)'
+        required: false
+        type: string
+        default: ''
+      go-version-file:
+        description: 'Path to go.mod for Go version detection'
+        required: false
+        type: string
+        default: 'go.mod'
+    outputs:
+      image:
+        description: 'Image reference (without digest)'
+        value: ${{ jobs.build.outputs.image }}
+      digest:
+        description: 'Image digest'
+        value: ${{ jobs.build.outputs.digest }}
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+  security-events: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Build"
+        id: build
+        uses: ./.github/actions/ko-build
+        with:
+          import-path: ${{ inputs.import-path }}
+          tag: ${{ inputs.tag }}
+          go-version-file: ${{ inputs.go-version-file }}
+
+  scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Scan"
+        uses: ./.github/actions/image-scan
+        with:
+          image: ${{ needs.build.outputs.image }}
+          digest: ${{ needs.build.outputs.digest }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  sign:
+    needs: [build, scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Sign"
+        uses: ./.github/actions/image-sign
+        with:
+          image: ${{ needs.build.outputs.image }}
+          digest: ${{ needs.build.outputs.digest }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  attest:
+    needs: [build, sign]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Attest"
+        uses: ./.github/actions/image-attest
+        with:
+          image: ${{ needs.build.outputs.image }}
+          digest: ${{ needs.build.outputs.digest }}
+          token: ${{ secrets.GITHUB_TOKEN }}
