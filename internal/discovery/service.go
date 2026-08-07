@@ -99,7 +99,7 @@ func NewService(
 	}
 	serviceUUID, err := NormalizeBluetoothServiceUUID(config.BluetoothServiceUUID)
 	if err != nil {
-		return nil, fmt.Errorf("Bluetooth service UUID: %w", err)
+		return nil, fmt.Errorf("bluetooth service UUID: %w", err)
 	}
 	if mdns == nil {
 		return nil, errors.New("mDNS broadcaster is required")

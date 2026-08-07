@@ -77,11 +77,11 @@ func NormalizeBluetoothServiceUUID(value string) (string, error) {
 		value[13] != '-' ||
 		value[18] != '-' ||
 		value[23] != '-' {
-		return "", errors.New("Bluetooth service UUID must use 8-4-4-4-12 form")
+		return "", errors.New("bluetooth service UUID must use 8-4-4-4-12 form")
 	}
 	compact := strings.ReplaceAll(value, "-", "")
 	if _, err := hex.DecodeString(compact); err != nil {
-		return "", fmt.Errorf("Bluetooth service UUID is not hexadecimal: %w", err)
+		return "", fmt.Errorf("bluetooth service UUID is not hexadecimal: %w", err)
 	}
 	return strings.ToLower(value), nil
 }
