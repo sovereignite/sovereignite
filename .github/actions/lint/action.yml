@@ -17,7 +17,7 @@ runs:
         go-version-file: ${{ inputs.go-version-file }}
 
     - name: "Lint"
-      uses: golangci/golangci-lint-action@v9
+      uses: golangci/golangci-lint-action@v7
       with:
         version: latest
         args: ${{ inputs.paths }}
