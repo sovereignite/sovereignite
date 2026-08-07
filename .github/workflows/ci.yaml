@@ -190,7 +190,7 @@ jobs:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     uses: ./.github/workflows/image-build.yaml
     with:
-      import-path: ./controllers/${{ matrix.controller }}/cmd
+      import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   build-kpt:
     needs: [test-kpt, discover-kpt]
@@ -218,7 +218,7 @@ jobs:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     uses: ./.github/workflows/image-scan.yaml
     with:
-      import-path: ./controllers/${{ matrix.controller }}/cmd
+      import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   scan-kpt:
     needs: [build-kpt, discover-kpt]
@@ -246,7 +246,7 @@ jobs:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     uses: ./.github/workflows/image-sign.yaml
     with:
-      import-path: ./controllers/${{ matrix.controller }}/cmd
+      import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   sign-kpt:
     needs: [scan-kpt, discover-kpt]
@@ -274,7 +274,7 @@ jobs:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
     uses: ./.github/workflows/image-attest.yaml
     with:
-      import-path: ./controllers/${{ matrix.controller }}/cmd
+      import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
 
   attest-kpt:
     needs: [sign-kpt, discover-kpt]
