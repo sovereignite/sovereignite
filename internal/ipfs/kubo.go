@@ -107,23 +107,23 @@ func validateNodeDescriptor(
 		return errors.New("publication node is not full Kubo")
 	}
 	if descriptor.Version == "" {
-		return errors.New("Kubo node version is required")
+		return errors.New("kubo node version is required")
 	}
 	if !descriptor.ExternalSigner ||
 		!descriptor.PreSignedRecordInjection {
 		return errors.New(
-			"Kubo node lacks coherent external pre-signed record injection",
+			"kubo node lacks coherent external pre-signed record injection",
 		)
 	}
 	if descriptor.PrivateKeySerialized {
-		return errors.New("Kubo node serialized a TPM-claimed private key")
+		return errors.New("kubo node serialized a TPM-claimed private key")
 	}
 	if filepath.Clean(descriptor.RepositoryPath) !=
 		filepath.Clean(config.RepositoryPath) {
-		return errors.New("Kubo node uses the wrong persistent repository")
+		return errors.New("kubo node uses the wrong persistent repository")
 	}
 	if descriptor.IPNSName != signer.Name() {
-		return errors.New("Kubo and TPM signer identities are inconsistent")
+		return errors.New("kubo and TPM signer identities are inconsistent")
 	}
 	return nil
 }
