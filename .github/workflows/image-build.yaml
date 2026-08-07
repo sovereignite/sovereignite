@@ -7,6 +7,10 @@ on:
         description: 'Go import path to build'
         required: true
         type: string
+      target-id:
+        description: 'Stable logical target id used in artifact names'
+        required: true
+        type: string
       tag:
         description: 'Image tag (defaults to branch name)'
         required: false
@@ -28,7 +32,7 @@ jobs:
     outputs:
       image: ${{ steps.build.outputs.image }}
       digest: ${{ steps.build.outputs.digest }}
-      artifact-name: ${{ steps.artifact.outputs.name }}
+      artifact-name: image-ref-${{ inputs.target-id }}
     steps:
       - uses: actions/checkout@v7
 
@@ -40,11 +44,6 @@ jobs:
           tag: ${{ inputs.tag }}
           go-version-file: ${{ inputs.go-version-file }}
 
-      - name: "Compute artifact name"
-        id: artifact
-        run: echo "name=$(echo '${{ inputs.import-path }}' | sed 's|/|-|g; s|^-||; s|-$||')" >> "$GITHUB_OUTPUT"
-        shell: bash
-
       - run: |
           mkdir -p /tmp/image-ref
           echo "${{ steps.build.outputs.image }}" > /tmp/image-ref/image
@@ -54,6 +53,6 @@ jobs:
       - name: "Upload image ref"
         uses: actions/upload-artifact@v7
         with:
-          name: image-ref-${{ steps.artifact.outputs.name }}
+          name: image-ref-${{ inputs.target-id }}
           path: /tmp/image-ref/
           retention-days: 1

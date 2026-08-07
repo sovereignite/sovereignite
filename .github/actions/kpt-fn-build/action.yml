@@ -4,6 +4,9 @@ inputs:
   import-path:
     description: 'Go import path for the function'
     required: true
+  target-id:
+    description: 'Stable logical target id used in artifact names'
+    required: true
   tag:
     description: 'Image tag (defaults to branch name)'
     required: false
@@ -39,6 +42,7 @@ runs:
         image: ${{ steps.build.outputs.image }}
         digest: ${{ steps.build.outputs.digest }}
         token: ${{ inputs.token }}
+        artifact-name: scan-sarif-${{ inputs.target-id }}
 
     - name: Sign image
       uses: ./.github/actions/image-sign

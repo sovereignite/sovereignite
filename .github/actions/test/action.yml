@@ -10,8 +10,7 @@ inputs:
     default: 'go.mod'
   report-name:
     description: 'Name for the test report artifact'
-    required: false
-    default: 'test-report'
+    required: true
 runs:
   using: "composite"
   steps:

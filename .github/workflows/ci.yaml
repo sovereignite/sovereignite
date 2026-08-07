@@ -91,6 +91,21 @@ jobs:
           changed-files: ${{ needs.discover-changes.outputs.changed-files }}
           full-build: ${{ needs.discover-changes.outputs.full-build }}
 
+  discover-kpt-packages:
+    needs: discover-changes
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.discover.outputs.packages }}
+      has-targets: ${{ steps.discover.outputs.has-targets }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: "Discover"
+        id: discover
+        uses: ./.github/actions/discover-kpt-packages
+
   discover-libraries:
     needs: discover-changes
     runs-on: ubuntu-latest
@@ -156,7 +171,7 @@ jobs:
       - name: "Lint"
         uses: ./.github/actions/lint
         with:
-          paths: ./${{ matrix.function }}/...
+          paths: ./${{ matrix.function.path }}/...
 
   lint-libraries:
     if: needs.discover-libraries.outputs.has-targets == 'true'
@@ -190,6 +205,7 @@ jobs:
         uses: ./.github/actions/test
         with:
           paths: ./cmd/${{ matrix.command }}/...
+          report-name: test-report-go-${{ matrix.command }}
 
   test-controllers:
     if: needs.discover-controllers.outputs.has-targets == 'true'
@@ -206,6 +222,7 @@ jobs:
         uses: ./.github/actions/test
         with:
           paths: ./controllers/${{ matrix.controller }}/...
+          report-name: test-report-controller-${{ matrix.controller }}
 
   test-kpt:
     if: needs.discover-kpt.outputs.has-targets == 'true'
@@ -221,7 +238,8 @@ jobs:
       - name: "Test"
         uses: ./.github/actions/test
         with:
-          paths: ./${{ matrix.function }}/...
+          paths: ./${{ matrix.function.path }}/...
+          report-name: test-report-kpt-fn-${{ matrix.function.id }}
 
   test-libraries:
     if: needs.discover-libraries.outputs.has-targets == 'true'
@@ -238,6 +256,7 @@ jobs:
         uses: ./.github/actions/test
         with:
           paths: ./internal/${{ matrix.library }}/...
+          report-name: test-report-library-${{ matrix.library }}
 
   quality-gate:
     if: always()
@@ -271,6 +290,7 @@ jobs:
     uses: ./.github/workflows/image-build.yaml
     with:
       import-path: ./cmd/${{ matrix.command }}
+      target-id: go-${{ matrix.command }}
 
   build-controllers:
     if: needs.discover-controllers.outputs.has-targets == 'true'
@@ -282,6 +302,7 @@ jobs:
     uses: ./.github/workflows/image-build.yaml
     with:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
+      target-id: controller-${{ matrix.controller }}
 
   build-kpt:
     if: needs.discover-kpt.outputs.has-targets == 'true'
@@ -292,7 +313,8 @@ jobs:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     uses: ./.github/workflows/image-build.yaml
     with:
-      import-path: ./${{ matrix.function }}
+      import-path: ./${{ matrix.function.path }}
+      target-id: kpt-fn-${{ matrix.function.id }}
 
   build-gate:
     if: always()
@@ -324,6 +346,7 @@ jobs:
     uses: ./.github/workflows/image-scan.yaml
     with:
       import-path: ./cmd/${{ matrix.command }}
+      target-id: go-${{ matrix.command }}
 
   scan-controllers:
     if: needs.discover-controllers.outputs.has-targets == 'true'
@@ -335,6 +358,7 @@ jobs:
     uses: ./.github/workflows/image-scan.yaml
     with:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
+      target-id: controller-${{ matrix.controller }}
 
   scan-kpt:
     if: needs.discover-kpt.outputs.has-targets == 'true'
@@ -345,7 +369,8 @@ jobs:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     uses: ./.github/workflows/image-scan.yaml
     with:
-      import-path: ./${{ matrix.function }}
+      import-path: ./${{ matrix.function.path }}
+      target-id: kpt-fn-${{ matrix.function.id }}
 
   scan-gate:
     if: always()
@@ -377,6 +402,7 @@ jobs:
     uses: ./.github/workflows/image-sign.yaml
     with:
       import-path: ./cmd/${{ matrix.command }}
+      target-id: go-${{ matrix.command }}
 
   sign-controllers:
     if: needs.discover-controllers.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
@@ -388,6 +414,7 @@ jobs:
     uses: ./.github/workflows/image-sign.yaml
     with:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
+      target-id: controller-${{ matrix.controller }}
 
   sign-kpt:
     if: needs.discover-kpt.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
@@ -398,7 +425,8 @@ jobs:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     uses: ./.github/workflows/image-sign.yaml
     with:
-      import-path: ./${{ matrix.function }}
+      import-path: ./${{ matrix.function.path }}
+      target-id: kpt-fn-${{ matrix.function.id }}
 
   sign-gate:
     if: always()
@@ -434,6 +462,7 @@ jobs:
     uses: ./.github/workflows/image-attest.yaml
     with:
       import-path: ./cmd/${{ matrix.command }}
+      target-id: go-${{ matrix.command }}
 
   attest-controllers:
     if: needs.discover-controllers.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
@@ -445,6 +474,7 @@ jobs:
     uses: ./.github/workflows/image-attest.yaml
     with:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
+      target-id: controller-${{ matrix.controller }}
 
   attest-kpt:
     if: needs.discover-kpt.outputs.has-targets == 'true' && github.ref == 'refs/heads/master'
@@ -455,14 +485,17 @@ jobs:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
     uses: ./.github/workflows/image-attest.yaml
     with:
-      import-path: ./${{ matrix.function }}
+      import-path: ./${{ matrix.function.path }}
+      target-id: kpt-fn-${{ matrix.function.id }}
 
-  # ─── KPT FUNCTIONS ───────────────────────────────────────────────────
+  # ─── KPT PACKAGES ────────────────────────────────────────────────────
   kpt-render:
     if: >-
       ${{
         always() &&
         github.ref == 'refs/heads/master' &&
+        needs.discover-kpt-packages.result == 'success' &&
+        needs.discover-kpt-packages.outputs.has-targets == 'true' &&
         needs.discover-go.result == 'success' &&
         needs.discover-controllers.result == 'success' &&
         needs.discover-kpt.result == 'success' &&
@@ -476,8 +509,12 @@ jobs:
           needs.discover-kpt.outputs.has-targets != 'true' || needs.attest-kpt.result == 'success'
         )
       }}
-    needs: [discover-go, discover-controllers, discover-kpt, attest-go, attest-controllers, attest-kpt]
+    needs: [discover-kpt-packages, discover-go, discover-controllers, discover-kpt, attest-go, attest-controllers, attest-kpt]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        package: ${{ fromJson(needs.discover-kpt-packages.outputs.packages) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -487,18 +524,23 @@ jobs:
       - name: "Render"
         uses: ./.github/actions/kpt-render
         with:
-          package_path: kubernetes/sovereignite.net/adk/shipcrew
+          package_path: ${{ matrix.package.path }}
 
       - name: "Upload rendered package"
         uses: actions/upload-artifact@v7
         with:
-          name: rendered-kpt-package
-          path: kubernetes/sovereignite.net/adk/shipcrew
+          name: kpt-package-${{ matrix.package.id }}
+          path: ${{ matrix.package.path }}
           retention-days: 1
 
   kpt-validate:
-    needs: kpt-render
+    if: needs.discover-kpt-packages.outputs.has-targets == 'true'
+    needs: [kpt-render, discover-kpt-packages]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        package: ${{ fromJson(needs.discover-kpt-packages.outputs.packages) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -508,28 +550,33 @@ jobs:
       - name: "Download rendered package"
         uses: actions/download-artifact@v7
         with:
-          name: rendered-kpt-package
-          path: kubernetes/sovereignite.net/adk/shipcrew
+          name: kpt-package-${{ matrix.package.id }}
+          path: ${{ matrix.package.path }}
 
       - name: "Validate kubeconform"
         uses: ./.github/actions/kpt-kubeconform
         with:
-          package_path: kubernetes/sovereignite.net/adk/shipcrew
+          package_path: ${{ matrix.package.path }}
 
       - name: "Validate gatekeeper"
         uses: ./.github/actions/kpt-gatekeeper
         with:
-          package_path: kubernetes/sovereignite.net/adk/shipcrew
+          package_path: ${{ matrix.package.path }}
 
   kpt-provenance:
     if: >-
       ${{
         github.ref == 'refs/heads/master' &&
+        needs.discover-kpt-packages.outputs.has-targets == 'true' &&
         needs.kpt-validate.result == 'success' &&
         needs.attest-kpt.result == 'success'
       }}
-    needs: [kpt-validate, attest-kpt]
+    needs: [kpt-validate, attest-kpt, discover-kpt-packages]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        package: ${{ fromJson(needs.discover-kpt-packages.outputs.packages) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -539,18 +586,13 @@ jobs:
       - name: "Download rendered package"
         uses: actions/download-artifact@v7
         with:
-          name: rendered-kpt-package
-          path: kubernetes/sovereignite.net/adk/shipcrew
-
-      - name: "Compute artifact name"
-        id: artifact
-        run: echo "name=$(echo 'kubernetes/sovereignite.net/kpt-functions/provenance' | sed 's|/|-|g; s|^-||; s|-$||')" >> "$GITHUB_OUTPUT"
-        shell: bash
+          name: kpt-package-${{ matrix.package.id }}
+          path: ${{ matrix.package.path }}
 
       - name: "Download image ref"
         uses: actions/download-artifact@v7
         with:
-          name: image-ref-${{ steps.artifact.outputs.name }}
+          name: image-ref-kpt-fn-sovereignite-net-provenance
           path: /tmp/image-ref/
 
       - name: "Read image ref"
@@ -563,7 +605,7 @@ jobs:
       - name: "Provenance"
         uses: ./.github/actions/kpt-provenance
         with:
-          package_path: kubernetes/sovereignite.net/adk/shipcrew
+          package_path: ${{ matrix.package.path }}
           image: ${{ steps.ref.outputs.image }}@${{ steps.ref.outputs.digest }}
 
   notify-failure:
@@ -573,7 +615,7 @@ jobs:
         always() &&
         contains(needs.*.result, 'failure')
       }}
-    needs: [discover-changes, discover-go, discover-controllers, discover-kpt, discover-libraries, lint-go, lint-controllers, lint-kpt, lint-libraries, test-go, test-controllers, test-kpt, test-libraries, quality-gate, build-go, build-controllers, build-kpt, build-gate, scan-go, scan-controllers, scan-kpt, scan-gate, sign-go, sign-controllers, sign-kpt, sign-gate, attest-go, attest-controllers, attest-kpt, kpt-render, kpt-validate, kpt-provenance]
+    needs: [discover-changes, discover-go, discover-controllers, discover-kpt, discover-kpt-packages, discover-libraries, lint-go, lint-controllers, lint-kpt, lint-libraries, test-go, test-controllers, test-kpt, test-libraries, quality-gate, build-go, build-controllers, build-kpt, build-gate, scan-go, scan-controllers, scan-kpt, scan-gate, sign-go, sign-controllers, sign-kpt, sign-gate, attest-go, attest-controllers, attest-kpt, kpt-render, kpt-validate, kpt-provenance]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

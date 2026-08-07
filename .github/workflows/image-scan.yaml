@@ -7,6 +7,10 @@ on:
         description: 'Go import path (for artifact lookup)'
         required: true
         type: string
+      target-id:
+        description: 'Stable logical target id used in artifact names'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -18,15 +22,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: "Compute artifact name"
-        id: artifact
-        run: echo "name=$(echo '${{ inputs.import-path }}' | sed 's|/|-|g; s|^-||; s|-$||')" >> "$GITHUB_OUTPUT"
-        shell: bash
-
       - name: "Download image ref"
         uses: actions/download-artifact@v7
         with:
-          name: image-ref-${{ steps.artifact.outputs.name }}
+          name: image-ref-${{ inputs.target-id }}
           path: /tmp/image-ref/
 
       - name: "Read image ref"
@@ -42,3 +41,4 @@ jobs:
           image: ${{ steps.ref.outputs.image }}
           digest: ${{ steps.ref.outputs.digest }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          artifact-name: scan-sarif-${{ inputs.target-id }}
