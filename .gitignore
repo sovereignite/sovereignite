@@ -64,3 +64,5 @@ crash.*.log
 
 # local build outputs
 /tpm-devid-provisioner
+/provenance
+/controllers/spire-tpm-keymanager/spire-tpm-keymanager

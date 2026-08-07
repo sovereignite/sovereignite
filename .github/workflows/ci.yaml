@@ -59,6 +59,49 @@ jobs:
         id: discover
         uses: ./.github/actions/discover-libraries
 
+  # ─── LINT ────────────────────────────────────────────────────────────
+  lint-go:
+    needs: discover-go
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        command: ${{ fromJson(needs.discover-go.outputs.commands) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Lint"
+        uses: ./.github/actions/lint
+        with:
+          paths: ./cmd/${{ matrix.command }}/...
+
+  lint-controllers:
+    needs: discover-controllers
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Lint"
+        uses: ./.github/actions/lint
+        with:
+          paths: ./controllers/${{ matrix.controller }}/...
+
+  lint-kpt:
+    needs: discover-kpt
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Lint"
+        uses: ./.github/actions/lint
+        with:
+          paths: ./${{ matrix.function }}/...
+
   lint-libraries:
     needs: discover-libraries
     runs-on: ubuntu-latest
@@ -72,6 +115,49 @@ jobs:
         uses: ./.github/actions/lint
         with:
           paths: ./internal/${{ matrix.library }}/...
+
+  # ─── TEST ────────────────────────────────────────────────────────────
+  test-go:
+    needs: [lint-go, discover-go]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        command: ${{ fromJson(needs.discover-go.outputs.commands) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Test"
+        uses: ./.github/actions/test
+        with:
+          paths: ./cmd/${{ matrix.command }}/...
+
+  test-controllers:
+    needs: [lint-controllers, discover-controllers]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Test"
+        uses: ./.github/actions/test
+        with:
+          paths: ./controllers/${{ matrix.controller }}/...
+
+  test-kpt:
+    needs: [lint-kpt, discover-kpt]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: "Test"
+        uses: ./.github/actions/test
+        with:
+          paths: ./${{ matrix.function }}/...
 
   test-libraries:
     needs: [lint-libraries, discover-libraries]
@@ -87,36 +173,121 @@ jobs:
         with:
           paths: ./internal/${{ matrix.library }}/...
 
-  go-command:
-    needs: discover-go
+  # ─── BUILD ───────────────────────────────────────────────────────────
+  build-go:
+    needs: [test-go, discover-go]
     strategy:
       matrix:
         command: ${{ fromJson(needs.discover-go.outputs.commands) }}
-    uses: ./.github/workflows/image-pipeline.yaml
+    uses: ./.github/workflows/image-build.yaml
     with:
       import-path: ./cmd/${{ matrix.command }}
 
-  controller:
-    needs: discover-controllers
+  build-controllers:
+    needs: [test-controllers, discover-controllers]
     strategy:
       matrix:
         controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
-    uses: ./.github/workflows/image-pipeline.yaml
+    uses: ./.github/workflows/image-build.yaml
     with:
       import-path: ./controllers/${{ matrix.controller }}/cmd
-      lint-path: ./controllers/${{ matrix.controller }}/...
 
-  kpt-function:
-    needs: discover-kpt
+  build-kpt:
+    needs: [test-kpt, discover-kpt]
     strategy:
       matrix:
         function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
-    uses: ./.github/workflows/image-pipeline.yaml
+    uses: ./.github/workflows/image-build.yaml
     with:
       import-path: ./${{ matrix.function }}
 
+  # ─── SCAN ────────────────────────────────────────────────────────────
+  scan-go:
+    needs: [build-go, discover-go]
+    strategy:
+      matrix:
+        command: ${{ fromJson(needs.discover-go.outputs.commands) }}
+    uses: ./.github/workflows/image-scan.yaml
+    with:
+      import-path: ./cmd/${{ matrix.command }}
+
+  scan-controllers:
+    needs: [build-controllers, discover-controllers]
+    strategy:
+      matrix:
+        controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
+    uses: ./.github/workflows/image-scan.yaml
+    with:
+      import-path: ./controllers/${{ matrix.controller }}/cmd
+
+  scan-kpt:
+    needs: [build-kpt, discover-kpt]
+    strategy:
+      matrix:
+        function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
+    uses: ./.github/workflows/image-scan.yaml
+    with:
+      import-path: ./${{ matrix.function }}
+
+  # ─── SIGN ────────────────────────────────────────────────────────────
+  sign-go:
+    needs: [scan-go, discover-go]
+    strategy:
+      matrix:
+        command: ${{ fromJson(needs.discover-go.outputs.commands) }}
+    uses: ./.github/workflows/image-sign.yaml
+    with:
+      import-path: ./cmd/${{ matrix.command }}
+
+  sign-controllers:
+    needs: [scan-controllers, discover-controllers]
+    strategy:
+      matrix:
+        controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
+    uses: ./.github/workflows/image-sign.yaml
+    with:
+      import-path: ./controllers/${{ matrix.controller }}/cmd
+
+  sign-kpt:
+    needs: [scan-kpt, discover-kpt]
+    strategy:
+      matrix:
+        function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
+    uses: ./.github/workflows/image-sign.yaml
+    with:
+      import-path: ./${{ matrix.function }}
+
+  # ─── ATTEST ──────────────────────────────────────────────────────────
+  attest-go:
+    needs: [sign-go, discover-go]
+    strategy:
+      matrix:
+        command: ${{ fromJson(needs.discover-go.outputs.commands) }}
+    uses: ./.github/workflows/image-attest.yaml
+    with:
+      import-path: ./cmd/${{ matrix.command }}
+
+  attest-controllers:
+    needs: [sign-controllers, discover-controllers]
+    strategy:
+      matrix:
+        controller: ${{ fromJson(needs.discover-controllers.outputs.controllers) }}
+    uses: ./.github/workflows/image-attest.yaml
+    with:
+      import-path: ./controllers/${{ matrix.controller }}/cmd
+
+  attest-kpt:
+    needs: [sign-kpt, discover-kpt]
+    strategy:
+      matrix:
+        function: ${{ fromJson(needs.discover-kpt.outputs.functions) }}
+    uses: ./.github/workflows/image-attest.yaml
+    with:
+      import-path: ./${{ matrix.function }}
+
+  # ─── KPT FUNCTIONS ───────────────────────────────────────────────────
   kpt-render:
-    needs: kpt-function
+    needs: attest-kpt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -149,7 +320,7 @@ jobs:
           package_path: kubernetes/sovereignite.net/adk/shipcrew
 
   kpt-provenance:
-    needs: kpt-function
+    needs: attest-kpt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -157,15 +328,33 @@ jobs:
       - name: "Setup kpt"
         uses: ./.github/actions/kpt-setup
 
+      - name: "Compute artifact name"
+        id: artifact
+        run: echo "name=$(echo 'kubernetes/sovereignite.net/kpt-functions/provenance' | sed 's|/|-|g; s|^-||; s|-$||')" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: "Download image ref"
+        uses: actions/download-artifact@v7
+        with:
+          name: image-ref-${{ steps.artifact.outputs.name }}
+          path: /tmp/image-ref/
+
+      - name: "Read image ref"
+        id: ref
+        run: |
+          echo "image=$(cat /tmp/image-ref/image)" >> "$GITHUB_OUTPUT"
+          echo "digest=$(cat /tmp/image-ref/digest)" >> "$GITHUB_OUTPUT"
+        shell: bash
+
       - name: "Provenance"
         uses: ./.github/actions/kpt-provenance
         with:
           package_path: kubernetes/sovereignite.net/adk/shipcrew
-          image: ${{ needs.kpt-function.outputs.image }}@${{ needs.kpt-function.outputs.digest }}
+          image: ${{ steps.ref.outputs.image }}@${{ steps.ref.outputs.digest }}
 
   notify-failure:
     if: failure()
-    needs: [discover-go, discover-controllers, discover-kpt, discover-libraries, lint-libraries, test-libraries, go-command, controller, kpt-function, kpt-render, kpt-validate, kpt-provenance]
+    needs: [discover-go, discover-controllers, discover-kpt, discover-libraries, lint-go, lint-controllers, lint-kpt, lint-libraries, test-go, test-controllers, test-kpt, test-libraries, build-go, build-controllers, build-kpt, scan-go, scan-controllers, scan-kpt, sign-go, sign-controllers, sign-kpt, attest-go, attest-controllers, attest-kpt, kpt-render, kpt-validate, kpt-provenance]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
