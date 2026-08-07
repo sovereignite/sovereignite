@@ -17,7 +17,11 @@ permissions:
   issues: write
 
 jobs:
+  discover:
+    uses: ./.github/workflows/discover-components.yaml
+
   lint:
+    needs: discover
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -25,7 +29,7 @@ jobs:
       - name: "Lint"
         uses: ./.github/actions/lint
         with:
-          paths: ./cmd/shipcrew/... ./internal/shipcrew/...
+          paths: ./cmd/... ./internal/... ./controllers/...
 
   test:
     needs: lint
@@ -36,22 +40,37 @@ jobs:
       - name: "Test"
         uses: ./.github/actions/test
         with:
-          paths: ./internal/shipcrew/...
+          paths: ./internal/...
 
-  build-app:
-    needs: test
+  build-go:
+    needs: [test, discover]
+    strategy:
+      matrix:
+        command: ${{ fromJson(needs.discover.outputs.go-commands) }}
     uses: ./.github/workflows/image-pipeline.yaml
     with:
-      import-path: ./cmd/shipcrew
+      import-path: ./cmd/${{ matrix.command }}
 
-  build-kpt-fn:
-    needs: test
+  build-controllers:
+    needs: [test, discover]
+    strategy:
+      matrix:
+        controller: ${{ fromJson(needs.discover.outputs.controllers) }}
     uses: ./.github/workflows/image-pipeline.yaml
     with:
-      import-path: ./kubernetes/sovereignite.net/kpt-functions/provenance
+      import-path: ./controllers/${{ matrix.controller }}/cmd
+
+  build-kpt:
+    needs: [test, discover]
+    strategy:
+      matrix:
+        function: ${{ fromJson(needs.discover.outputs.kpt-functions) }}
+    uses: ./.github/workflows/image-pipeline.yaml
+    with:
+      import-path: ./kubernetes/sovereignite.net/kpt-functions/${{ matrix.function }}
 
   render:
-    needs: [build-app, build-kpt-fn]
+    needs: [build-go, build-controllers, build-kpt]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -93,8 +112,11 @@ jobs:
           package_path: kubernetes/sovereignite.net/adk/shipcrew
 
   provenance:
-    needs: [policy, build-kpt-fn]
+    needs: [policy, build-kpt]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        function: ${{ fromJson(needs.discover.outputs.kpt-functions) }}
     steps:
       - uses: actions/checkout@v7
 
@@ -105,11 +127,11 @@ jobs:
         uses: ./.github/actions/kpt-provenance
         with:
           package_path: kubernetes/sovereignite.net/adk/shipcrew
-          image: ${{ needs.build-kpt-fn.outputs.image }}@${{ needs.build-kpt-fn.outputs.digest }}
+          image: ${{ needs.build-kpt.outputs.image }}@${{ needs.build-kpt.outputs.digest }}
 
   notify-failure:
     if: failure() && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
-    needs: [lint, test, build-app, build-kpt-fn, render, validate, policy, provenance]
+    needs: [discover, lint, test, build-go, build-controllers, build-kpt, render, validate, policy, provenance]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
