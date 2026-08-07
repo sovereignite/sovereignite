@@ -7,11 +7,6 @@ on:
         description: 'Go import path to build'
         required: true
         type: string
-      lint-path:
-        description: 'Path to lint (defaults to import-path/...)'
-        required: false
-        type: string
-        default: ''
       tag:
         description: 'Image tag (defaults to branch name)'
         required: false
@@ -38,37 +33,7 @@ permissions:
   security-events: write
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: "Lint"
-        uses: ./.github/actions/lint
-        with:
-          paths: ${{ inputs.lint-path || format('{0}/...', inputs.import-path) }}
-          go-version-file: ${{ inputs.go-version-file }}
-
-  test:
-    needs: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: "Sanitize artifact name"
-        id: artifact
-        run: echo "name=$(echo '${{ inputs.import-path }}' | sed 's|/|-|g; s|^-||; s|-$||')" >> "$GITHUB_OUTPUT"
-        shell: bash
-
-      - name: "Test"
-        uses: ./.github/actions/test
-        with:
-          paths: ${{ inputs.lint-path || format('{0}/...', inputs.import-path) }}
-          go-version-file: ${{ inputs.go-version-file }}
-          report-name: test-report-${{ steps.artifact.outputs.name }}
-
   build:
-    needs: test
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.build.outputs.image }}
