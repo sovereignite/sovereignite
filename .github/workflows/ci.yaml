@@ -290,6 +290,7 @@ jobs:
     uses: ./.github/workflows/image-build.yaml
     with:
       import-path: ./cmd/${{ matrix.command }}
+      image-name: ${{ matrix.command }}
       target-id: go-${{ matrix.command }}
 
   build-controllers:
@@ -302,6 +303,7 @@ jobs:
     uses: ./.github/workflows/image-build.yaml
     with:
       import-path: ./controllers/${{ matrix.controller }}/cmd/${{ matrix.controller }}
+      image-name: ${{ matrix.controller }}
       target-id: controller-${{ matrix.controller }}
 
   build-kpt:
@@ -314,6 +316,7 @@ jobs:
     uses: ./.github/workflows/image-build.yaml
     with:
       import-path: ./${{ matrix.function.path }}
+      image-name: ${{ matrix.function.name }}
       target-id: kpt-fn-${{ matrix.function.id }}
 
   build-gate:
