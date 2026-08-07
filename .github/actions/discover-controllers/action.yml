@@ -10,6 +10,6 @@ runs:
     - name: "Discover"
       id: discover
       run: |
-        CONTROLLERS=$(find controllers -maxdepth 1 -type d -not -name controllers -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
+        CONTROLLERS=$(find controllers -maxdepth 1 -type d -not -name controllers -not -name internal -exec basename {} \; | jq -R -s -c 'split("\n") | map(select(length > 0))')
         echo "controllers=$CONTROLLERS" >> $GITHUB_OUTPUT
       shell: bash
