@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   discover-changes:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       changed-files: ${{ steps.discover.outputs.changed-files }}
       full-build: ${{ steps.discover.outputs.full-build }}
@@ -40,7 +40,7 @@ jobs:
 
   discover-go:
     needs: discover-changes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       commands: ${{ steps.discover.outputs.commands }}
       has-targets: ${{ steps.discover.outputs.has-targets }}
@@ -58,7 +58,7 @@ jobs:
 
   discover-controllers:
     needs: discover-changes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       controllers: ${{ steps.discover.outputs.controllers }}
       has-targets: ${{ steps.discover.outputs.has-targets }}
@@ -76,7 +76,7 @@ jobs:
 
   discover-kpt:
     needs: discover-changes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       functions: ${{ steps.discover.outputs.functions }}
       has-targets: ${{ steps.discover.outputs.has-targets }}
@@ -94,7 +94,7 @@ jobs:
 
   discover-kpt-packages:
     needs: discover-changes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       packages: ${{ steps.discover.outputs.packages }}
       has-targets: ${{ steps.discover.outputs.has-targets }}
@@ -109,7 +109,7 @@ jobs:
 
   discover-libraries:
     needs: discover-changes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       libraries: ${{ steps.discover.outputs.libraries }}
       has-targets: ${{ steps.discover.outputs.has-targets }}
@@ -129,7 +129,7 @@ jobs:
   lint-go:
     if: needs.discover-go.outputs.has-targets == 'true'
     needs: discover-go
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:
@@ -145,7 +145,7 @@ jobs:
   lint-controllers:
     if: needs.discover-controllers.outputs.has-targets == 'true'
     needs: discover-controllers
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:
@@ -161,7 +161,7 @@ jobs:
   lint-kpt:
     if: needs.discover-kpt.outputs.has-targets == 'true'
     needs: discover-kpt
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:
@@ -177,7 +177,7 @@ jobs:
   lint-libraries:
     if: needs.discover-libraries.outputs.has-targets == 'true'
     needs: discover-libraries
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:
@@ -194,7 +194,7 @@ jobs:
   test-go:
     if: needs.discover-go.outputs.has-targets == 'true'
     needs: [lint-go, discover-go]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:
@@ -211,7 +211,7 @@ jobs:
   test-controllers:
     if: needs.discover-controllers.outputs.has-targets == 'true'
     needs: [lint-controllers, discover-controllers]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:
@@ -228,7 +228,7 @@ jobs:
   test-kpt:
     if: needs.discover-kpt.outputs.has-targets == 'true'
     needs: [lint-kpt, discover-kpt]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:
@@ -245,7 +245,7 @@ jobs:
   test-libraries:
     if: needs.discover-libraries.outputs.has-targets == 'true'
     needs: [lint-libraries, discover-libraries]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:
@@ -262,7 +262,7 @@ jobs:
   quality-gate:
     if: always()
     needs: [discover-go, discover-controllers, discover-kpt, discover-libraries, test-go, test-controllers, test-kpt, test-libraries]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: "Require all test matrices to pass"
         if: >-
@@ -323,7 +323,7 @@ jobs:
   build-gate:
     if: always()
     needs: [discover-go, discover-controllers, discover-kpt, build-go, build-controllers, build-kpt]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: "Require all build matrices to pass"
         if: >-
@@ -379,7 +379,7 @@ jobs:
   scan-gate:
     if: always()
     needs: [discover-go, discover-controllers, discover-kpt, scan-go, scan-controllers, scan-kpt]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: "Require all scan matrices to pass"
         if: >-
@@ -435,7 +435,7 @@ jobs:
   sign-gate:
     if: always()
     needs: [discover-go, discover-controllers, discover-kpt, sign-go, sign-controllers, sign-kpt]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: "Require all signing matrices to pass"
         if: >-
@@ -506,7 +506,7 @@ jobs:
         )
       }}
     needs: [discover-kpt-packages, discover-go, discover-controllers, discover-kpt, attest-go, attest-controllers, attest-kpt]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:
@@ -532,7 +532,7 @@ jobs:
   kpt-validate:
     if: needs.discover-kpt-packages.outputs.has-targets == 'true'
     needs: [kpt-render, discover-kpt-packages]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:
@@ -567,7 +567,7 @@ jobs:
         needs.attest-kpt.result == 'success'
       }}
     needs: [kpt-validate, attest-kpt, discover-kpt-packages]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: true
       matrix:
@@ -611,7 +611,7 @@ jobs:
         contains(needs.*.result, 'failure')
       }}
     needs: [discover-changes, discover-go, discover-controllers, discover-kpt, discover-kpt-packages, discover-libraries, lint-go, lint-controllers, lint-kpt, lint-libraries, test-go, test-controllers, test-kpt, test-libraries, quality-gate, build-go, build-controllers, build-kpt, build-gate, scan-go, scan-controllers, scan-kpt, scan-gate, sign-go, sign-controllers, sign-kpt, sign-gate, attest-go, attest-controllers, attest-kpt, kpt-render, kpt-validate, kpt-provenance]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v7
 
